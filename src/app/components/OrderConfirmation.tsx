@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { CheckCircle } from 'lucide-react';
@@ -8,6 +9,7 @@ import { Order } from '../types';
 export const OrderConfirmation: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { formatPrice } = useCurrency();
   const order = (location.state as any)?.order as Order | undefined;
 
   if (!order) {
@@ -44,7 +46,7 @@ export const OrderConfirmation: React.FC = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Total:</span>
-                    <span className="text-xl text-blue-600">€{order.total.toFixed(2)}</span>
+                    <span className="text-xl text-blue-600">{formatPrice(order.total)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Estado:</span>

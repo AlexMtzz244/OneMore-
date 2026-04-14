@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
@@ -9,6 +10,7 @@ import { toast } from 'sonner';
 export const Cart: React.FC = () => {
   const navigate = useNavigate();
   const { cart, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
+  const { formatPrice } = useCurrency();
 
   const handleRemoveItem = (productId: string, productName: string) => {
     removeFromCart(productId);
@@ -81,15 +83,15 @@ export const Cart: React.FC = () => {
                         {item.product.discount ? (
                           <>
                             <span className="text-lg text-blue-600">
-                              €{getDiscountedPrice(item.product.price, item.product.discount).toFixed(2)}
+                              {formatPrice(getDiscountedPrice(item.product.price, item.product.discount))}
                             </span>
                             <span className="text-sm text-gray-500 line-through">
-                              €{item.product.price.toFixed(2)}
+                              {formatPrice(item.product.price)}
                             </span>
                           </>
                         ) : (
                           <span className="text-lg text-blue-600">
-                            €{item.product.price.toFixed(2)}
+                            {formatPrice(item.product.price)}
                           </span>
                         )}
                       </div>
@@ -118,7 +120,7 @@ export const Cart: React.FC = () => {
                         {/* Subtotal */}
                         <div className="flex-1 text-right">
                           <span className="text-lg">
-                            €{getItemTotal(item).toFixed(2)}
+                            {formatPrice(getItemTotal(item))}
                           </span>
                         </div>
 
@@ -163,7 +165,7 @@ export const Cart: React.FC = () => {
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Subtotal</span>
-                    <span>€{getCartTotal().toFixed(2)}</span>
+                    <span>{formatPrice(getCartTotal())}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Envío</span>
@@ -172,7 +174,7 @@ export const Cart: React.FC = () => {
                   <div className="border-t pt-3 flex justify-between items-center">
                     <span className="text-lg">Total</span>
                     <span className="text-2xl text-blue-600">
-                      €{getCartTotal().toFixed(2)}
+                      {formatPrice(getCartTotal())}
                     </span>
                   </div>
                 </div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { useProducts } from '../contexts/ProductContext';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -14,6 +15,7 @@ import { toast } from 'sonner';
 export const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { formatPrice } = useCurrency();
   const { getProductById, products, getReviewsByProduct, addReview } = useProducts();
   const { addToCart } = useCart();
   const { user } = useAuth();
@@ -174,15 +176,15 @@ export const ProductDetail: React.FC = () => {
               {product.discount ? (
                 <div className="flex items-baseline gap-3">
                   <span className="text-4xl text-blue-600">
-                    €{getDiscountedPrice().toFixed(2)}
+                    {formatPrice(getDiscountedPrice())}
                   </span>
                   <span className="text-xl text-gray-500 line-through">
-                    €{product.price.toFixed(2)}
+                    {formatPrice(product.price)}
                   </span>
                   <Badge className="bg-red-500">Ahorra {product.discount}%</Badge>
                 </div>
               ) : (
-                <span className="text-4xl text-blue-600">€{product.price.toFixed(2)}</span>
+                <span className="text-4xl text-blue-600">{formatPrice(product.price)}</span>
               )}
             </div>
 
@@ -415,7 +417,7 @@ export const ProductDetail: React.FC = () => {
                       <p className="text-sm text-gray-600 mb-1">{relatedProduct.brand}</p>
                       <h3 className="mb-2 line-clamp-2">{relatedProduct.name}</h3>
                       <span className="text-lg text-blue-600">
-                        €{relatedProduct.price.toFixed(2)}
+                        {formatPrice(relatedProduct.price)}
                       </span>
                     </div>
                   </CardContent>

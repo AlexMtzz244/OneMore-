@@ -1,16 +1,21 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, User, Search, Menu, X, LogOut, Package, Settings, Moon, Sun } from 'lucide-react';
+import { ShoppingCart, User, Search, Menu, X, LogOut, Package, Settings, Moon, Sun, Coins } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useCurrency, Currency } from '../contexts/CurrencyContext';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 
@@ -18,6 +23,7 @@ export const Header: React.FC = () => {
   const { user, logout, isAdmin } = useAuth();
   const { getCartItemsCount } = useCart();
   const { theme, toggleTheme } = useTheme();
+  const { currency, setCurrency, currencyOptions } = useCurrency();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -95,14 +101,43 @@ export const Header: React.FC = () => {
 
             {/* Theme Toggle for non-authenticated users */}
             {!user && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleTheme}
-                className="hidden sm:flex"
-              >
-                {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
-              </Button>
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex"
+                    >
+                      <Coins className="h-4 w-4 mr-2" />
+                      {currency}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-popover-foreground shadow-lg">
+                    <DropdownMenuLabel>Moneda</DropdownMenuLabel>
+                    <DropdownMenuRadioGroup
+                      value={currency}
+                      onValueChange={(value) => setCurrency(value as Currency)}
+                    >
+                      {currencyOptions.map((option) => (
+                        <DropdownMenuRadioItem key={option.code} value={option.code}>
+                          {option.label}
+                          <DropdownMenuShortcut>{option.code}</DropdownMenuShortcut>
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleTheme}
+                  className="hidden sm:flex"
+                >
+                  {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                </Button>
+              </>
             )}
 
             {/* User Menu */}
@@ -151,6 +186,20 @@ export const Header: React.FC = () => {
                         </>
                       )}
                     </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Moneda</DropdownMenuLabel>
+                    <DropdownMenuRadioGroup
+                      value={currency}
+                      onValueChange={(value) => setCurrency(value as Currency)}
+                    >
+                      {currencyOptions.map((option) => (
+                        <DropdownMenuRadioItem key={option.code} value={option.code} className="cursor-pointer">
+                          {option.label}
+                          <DropdownMenuShortcut>{option.code}</DropdownMenuShortcut>
+                        </DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
                   </div>
                   {isAdmin() && (
                     <>
@@ -267,6 +316,28 @@ export const Header: React.FC = () => {
                 </>
               )}
             </button>
+
+            {!user && (
+              <div className="pt-2 border-t border-border">
+                <p className="text-sm text-muted-foreground mb-2">Moneda</p>
+                <div className="flex flex-wrap gap-2">
+                  {currencyOptions.map((option) => (
+                    <Button
+                      key={option.code}
+                      type="button"
+                      size="sm"
+                      variant={currency === option.code ? 'default' : 'outline'}
+                      onClick={() => {
+                        setCurrency(option.code);
+                        setMobileMenuOpen(false);
+                      }}
+                    >
+                      {option.code}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
           </nav>
         )}
       </div>

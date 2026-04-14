@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { useProducts } from '../contexts/ProductContext';
 import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
@@ -10,6 +11,7 @@ import { ProductCategory } from '../types';
 
 export const Home: React.FC = () => {
   const { products } = useProducts();
+  const { formatPrice } = useCurrency();
   const navigate = useNavigate();
   const [api, setApi] = React.useState<CarouselApi>();
 
@@ -220,14 +222,14 @@ export const Home: React.FC = () => {
                       {product.discount ? (
                         <>
                           <span className="text-xl text-blue-600">
-                            €{getDiscountedPrice(product.price, product.discount).toFixed(2)}
+                            {formatPrice(getDiscountedPrice(product.price, product.discount))}
                           </span>
                           <span className="text-sm text-gray-500 line-through">
-                            €{product.price.toFixed(2)}
+                            {formatPrice(product.price)}
                           </span>
                         </>
                       ) : (
-                        <span className="text-xl text-blue-600">€{product.price.toFixed(2)}</span>
+                        <span className="text-xl text-blue-600">{formatPrice(product.price)}</span>
                       )}
                     </div>
                     <Button
@@ -276,7 +278,7 @@ export const Home: React.FC = () => {
                       <span className="text-sm text-gray-500">({product.reviewCount})</span>
                     </div>
                     <div className="mb-3">
-                      <span className="text-xl text-blue-600">€{product.price.toFixed(2)}</span>
+                      <span className="text-xl text-blue-600">{formatPrice(product.price)}</span>
                     </div>
                     <Button
                       className="w-full"

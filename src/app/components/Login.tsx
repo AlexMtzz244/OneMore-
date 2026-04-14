@@ -132,7 +132,7 @@ export const Login: React.FC = () => {
                       <Input
                         id="login-password"
                         type="password"
-                        placeholder="••••••"
+                        placeholder="******"
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
                         disabled={isLoading}

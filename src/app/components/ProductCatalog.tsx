@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { useProducts } from '../contexts/ProductContext';
 import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
@@ -13,6 +14,7 @@ import { ProductCategory, ProductGoal } from '../types';
 
 export const ProductCatalog: React.FC = () => {
   const { products } = useProducts();
+  const { formatPrice } = useCurrency();
   const { category } = useParams<{ category: ProductCategory }>();
   const navigate = useNavigate();
 
@@ -21,7 +23,7 @@ export const ProductCatalog: React.FC = () => {
   );
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedGoals, setSelectedGoals] = useState<ProductGoal[]>([]);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 100]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 2000]);
   const [sortBy, setSortBy] = useState<string>('popularity');
   const [showFilters, setShowFilters] = useState(false);
 
@@ -196,12 +198,12 @@ export const ProductCatalog: React.FC = () => {
                 {/* Rango de Precio */}
                 <div>
                   <Label className="text-base mb-3 block">
-                    Precio: €{priceRange[0]} - €{priceRange[1]}
+                    Precio: {formatPrice(priceRange[0], 0)} - {formatPrice(priceRange[1], 0)}
                   </Label>
                   <Slider
                     min={0}
-                    max={100}
-                    step={5}
+                    max={2000}
+                    step={50}
                     value={priceRange}
                     onValueChange={(value) => setPriceRange(value as [number, number])}
                     className="mb-2"
@@ -216,7 +218,7 @@ export const ProductCatalog: React.FC = () => {
                     setSelectedCategories(category ? [category] : []);
                     setSelectedBrands([]);
                     setSelectedGoals([]);
-                    setPriceRange([0, 100]);
+                    setPriceRange([0, 2000]);
                   }}
                 >
                   Limpiar Filtros
@@ -301,14 +303,14 @@ export const ProductCatalog: React.FC = () => {
                           {product.discount ? (
                             <>
                               <span className="text-xl text-blue-600">
-                                €{getDiscountedPrice(product.price, product.discount).toFixed(2)}
+                                {formatPrice(getDiscountedPrice(product.price, product.discount))}
                               </span>
                               <span className="text-sm text-gray-500 line-through">
-                                €{product.price.toFixed(2)}
+                                {formatPrice(product.price)}
                               </span>
                             </>
                           ) : (
-                            <span className="text-xl text-blue-600">€{product.price.toFixed(2)}</span>
+                            <span className="text-xl text-blue-600">{formatPrice(product.price)}</span>
                           )}
                         </div>
                         <Button

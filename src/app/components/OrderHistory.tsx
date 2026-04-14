@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { useProducts } from '../contexts/ProductContext';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -10,6 +11,7 @@ import { Package, Calendar, MapPin, CreditCard } from 'lucide-react';
 export const OrderHistory: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { formatPrice } = useCurrency();
   const { getOrdersByUser } = useProducts();
 
   React.useEffect(() => {
@@ -134,7 +136,7 @@ export const OrderHistory: React.FC = () => {
                         </div>
                         <div className="text-right">
                           <p className="text-lg text-blue-600">
-                            €{(item.product.price * item.quantity).toFixed(2)}
+                            {formatPrice(item.product.price * item.quantity)}
                           </p>
                         </div>
                       </div>
@@ -162,7 +164,7 @@ export const OrderHistory: React.FC = () => {
                   <div className="flex justify-between items-center pt-4 border-t">
                     <span className="text-lg">Total:</span>
                     <span className="text-2xl text-blue-600">
-                      €{order.total.toFixed(2)}
+                      {formatPrice(order.total)}
                     </span>
                   </div>
 

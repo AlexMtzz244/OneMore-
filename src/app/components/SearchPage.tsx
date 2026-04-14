@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { useProducts } from '../contexts/ProductContext';
 import { Card, CardContent } from './ui/card';
 import { Input } from './ui/input';
@@ -10,6 +11,7 @@ import { Search, Star } from 'lucide-react';
 export const SearchPage: React.FC = () => {
   const navigate = useNavigate();
   const { products } = useProducts();
+  const { formatPrice } = useCurrency();
   const [searchQuery, setSearchQuery] = useState('');
 
   const searchResults = searchQuery.trim()
@@ -103,15 +105,15 @@ export const SearchPage: React.FC = () => {
                           {product.discount ? (
                             <>
                               <span className="text-xl text-blue-600">
-                                €{getDiscountedPrice(product.price, product.discount).toFixed(2)}
+                                {formatPrice(getDiscountedPrice(product.price, product.discount))}
                               </span>
                               <span className="text-sm text-gray-500 line-through">
-                                €{product.price.toFixed(2)}
+                                {formatPrice(product.price)}
                               </span>
                             </>
                           ) : (
                             <span className="text-xl text-blue-600">
-                              €{product.price.toFixed(2)}
+                              {formatPrice(product.price)}
                             </span>
                           )}
                         </div>

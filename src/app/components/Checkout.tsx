@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { useProducts } from '../contexts/ProductContext';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -16,6 +17,7 @@ export const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { cart, getCartTotal, clearCart } = useCart();
+  const { formatPrice } = useCurrency();
   const { createOrder } = useProducts();
 
   const [shippingAddress, setShippingAddress] = useState<Address>(
@@ -245,7 +247,7 @@ export const Checkout: React.FC = () => {
                             Cantidad: {item.quantity}
                           </p>
                           <p className="text-sm text-blue-600">
-                            €{getItemTotal(item).toFixed(2)}
+                            {formatPrice(getItemTotal(item))}
                           </p>
                         </div>
                       </div>
@@ -258,7 +260,7 @@ export const Checkout: React.FC = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Subtotal</span>
-                      <span>€{getCartTotal().toFixed(2)}</span>
+                      <span>{formatPrice(getCartTotal())}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Envío</span>
@@ -268,7 +270,7 @@ export const Checkout: React.FC = () => {
                     <div className="flex justify-between items-center">
                       <span className="text-lg">Total</span>
                       <span className="text-2xl text-blue-600">
-                        €{getCartTotal().toFixed(2)}
+                        {formatPrice(getCartTotal())}
                       </span>
                     </div>
                   </div>

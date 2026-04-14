@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { useProducts } from '../contexts/ProductContext';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -19,6 +20,7 @@ import { Pencil, Trash2, Plus, Package, Users, ShoppingCart } from 'lucide-react
 export const AdminPanel: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
+  const { formatPrice } = useCurrency();
   const { products, addProduct, updateProduct, deleteProduct, getAllOrders, updateOrder } = useProducts();
   
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
@@ -236,7 +238,7 @@ export const AdminPanel: React.FC = () => {
                 </div>
                 <div>
                   <p className="text-sm text-gray-600">Ingresos Totales</p>
-                  <p className="text-2xl">€{stats.totalRevenue.toFixed(0)}</p>
+                  <p className="text-2xl">{formatPrice(stats.totalRevenue, 0)}</p>
                 </div>
               </div>
             </CardContent>
@@ -318,10 +320,10 @@ export const AdminPanel: React.FC = () => {
 
                         <div className="grid grid-cols-3 gap-4">
                           <div>
-                            <Label>Precio (€) *</Label>
+                            <Label>Precio Base (MXN) *</Label>
                             <Input
                               type="number"
-                              step="0.01"
+                              step="1"
                               value={formData.price}
                               onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
                             />
@@ -411,7 +413,7 @@ export const AdminPanel: React.FC = () => {
                           </div>
                         </TableCell>
                         <TableCell className="capitalize">{product.category}</TableCell>
-                        <TableCell>€{product.price.toFixed(2)}</TableCell>
+                        <TableCell>{formatPrice(product.price)}</TableCell>
                         <TableCell>
                           <span className={product.stock === 0 ? 'text-red-600' : product.stock < 10 ? 'text-orange-600' : ''}>
                             {product.stock}
@@ -466,7 +468,7 @@ export const AdminPanel: React.FC = () => {
                             {new Date(order.createdAt).toLocaleDateString('es-ES')}
                           </p>
                           <p className="text-sm text-gray-600">
-                            {order.items.length} producto(s) - €{order.total.toFixed(2)}
+                            {order.items.length} producto(s) - {formatPrice(order.total)}
                           </p>
                         </div>
                         <Select

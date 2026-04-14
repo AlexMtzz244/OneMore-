@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
 import { ProductProvider } from './contexts/ProductContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { CurrencyProvider } from './contexts/CurrencyContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
@@ -134,15 +135,17 @@ const App: React.FC = () => {
   return (
     <Router>
       <ThemeProvider>
-        <AuthProvider>
-          <NotificationProvider>
-            <CartProvider>
-              <ProductProvider>
-                <AppContent />
-              </ProductProvider>
-            </CartProvider>
-          </NotificationProvider>
-        </AuthProvider>
+        <CurrencyProvider>
+          <AuthProvider>
+            <NotificationProvider>
+              <CartProvider>
+                <ProductProvider>
+                  <AppContent />
+                </ProductProvider>
+              </CartProvider>
+            </NotificationProvider>
+          </AuthProvider>
+        </CurrencyProvider>
       </ThemeProvider>
     </Router>
   );

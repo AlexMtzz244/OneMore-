@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useProducts } from '../contexts/ProductContext';
+import { useCurrency } from '../contexts/CurrencyContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import { Button } from './ui/button';
@@ -58,6 +59,7 @@ export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAdmin } = useAuth();
   const { products, addProduct, updateProduct, deleteProduct, getAllOrders, updateOrder } = useProducts();
+  const { formatPrice } = useCurrency();
   const { theme, toggleTheme } = useTheme();
   const { notifications, unreadCount, markAsRead, markAllAsRead, addNotification } = useNotifications();
 
@@ -106,7 +108,7 @@ export const AdminDashboard: React.FC = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       const randomEvents = [
-        { type: 'sale' as const, message: 'Nueva venta realizada: €45.99' },
+        { type: 'sale' as const, message: `Nueva venta realizada: ${formatPrice(1299)}` },
         { type: 'order' as const, message: 'Nuevo pedido recibido' },
         { type: 'stock' as const, message: 'Alerta: Stock bajo en Whey Protein' },
         { type: 'user' as const, message: 'Nuevo usuario registrado' },
@@ -119,7 +121,7 @@ export const AdminDashboard: React.FC = () => {
     }, 30000); // Check every 30 seconds
 
     return () => clearInterval(interval);
-  }, [addNotification]);
+  }, [addNotification, formatPrice]);
 
   if (!user || !isAdmin()) {
     return null;
@@ -324,9 +326,9 @@ Fecha: ${new Date(order.createdAt).toLocaleString('es-ES')}
 Estado: ${order.status}
 
 PRODUCTOS:
-${order.items.map((item) => `- ${item.product.name} x${item.quantity} - €${(item.product.price * item.quantity).toFixed(2)}`).join('\n')}
+${order.items.map((item) => `- ${item.product.name} x${item.quantity} - ${formatPrice(item.product.price * item.quantity)}`).join('\n')}
 
-TOTAL: €${order.total.toFixed(2)}
+TOTAL: ${formatPrice(order.total)}
 
 Dirección de envío:
 ${order.shippingAddress.street}
@@ -512,7 +514,7 @@ Método de pago: ${order.paymentMethod}
                           <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
                             Ventas del Mes
                           </p>
-                          <p className="text-3xl mt-2">€{monthlyRevenue.toFixed(2)}</p>
+                          <p className="text-3xl mt-2">{formatPrice(monthlyRevenue)}</p>
                           <p className="text-sm text-green-500 mt-1 flex items-center gap-1">
                             <TrendingUp className="h-4 w-4" />
                             +12.5% vs mes anterior
@@ -612,7 +614,7 @@ Método de pago: ${order.paymentMethod}
                             borderRadius: '0.5rem',
                           }}
                           labelFormatter={(date) => new Date(date).toLocaleDateString('es-ES')}
-                          formatter={(value: number) => [`€${value.toFixed(2)}`, 'Ventas']}
+                          formatter={(value: number) => [formatPrice(value), 'Ventas']}
                         />
                         <Area
                           type="monotone"
@@ -783,10 +785,10 @@ Método de pago: ${order.paymentMethod}
 
                             <div className="grid grid-cols-3 gap-4">
                               <div>
-                                <Label>Precio (€) *</Label>
+                                <Label>Precio Base (MXN) *</Label>
                                 <Input
                                   type="number"
-                                  step="0.01"
+                                  step="1"
                                   value={formData.price}
                                   onChange={(e) =>
                                     setFormData({ ...formData, price: parseFloat(e.target.value) })
@@ -919,7 +921,7 @@ Método de pago: ${order.paymentMethod}
                                 </div>
                               </TableCell>
                               <TableCell className="capitalize">{product.category}</TableCell>
-                              <TableCell>€{product.price.toFixed(2)}</TableCell>
+                              <TableCell>{formatPrice(product.price)}</TableCell>
                               <TableCell>
                                 <span
                                   className={
@@ -1019,7 +1021,7 @@ Método de pago: ${order.paymentMethod}
                                     <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
                                       Total:
                                     </p>
-                                    <p className="font-medium">€{order.total.toFixed(2)}</p>
+                                    <p className="font-medium">{formatPrice(order.total)}</p>
                                   </div>
                                   <div>
                                     <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>

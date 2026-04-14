@@ -45,7 +45,7 @@ export const mockProducts: Product[] = [
     name: 'Whey Protein Isolate',
     brand: 'ProMax',
     category: 'proteina',
-    price: 45.99,
+    price: 1299,
     description: 'Proteína aislada de suero de alta pureza con 90% de contenido proteico. Ideal para recuperación muscular post-entrenamiento.',
     nutritionalInfo: {
       servingSize: '30g',
@@ -71,7 +71,7 @@ export const mockProducts: Product[] = [
     name: 'Creatina Monohidratada',
     brand: 'PowerLift',
     category: 'creatina',
-    price: 29.99,
+    price: 649,
     description: 'Creatina monohidratada micronizada de alta pureza. Aumenta la fuerza y el rendimiento en entrenamientos de alta intensidad.',
     nutritionalInfo: {
       servingSize: '5g',
@@ -98,7 +98,7 @@ export const mockProducts: Product[] = [
     name: 'Pre-Workout Extreme',
     brand: 'EnergyMax',
     category: 'pre-workout',
-    price: 39.99,
+    price: 799,
     description: 'Fórmula pre-entreno con cafeína, beta-alanina y citrulina para máxima energía y concentración.',
     nutritionalInfo: {
       servingSize: '15g',
@@ -124,7 +124,7 @@ export const mockProducts: Product[] = [
     name: 'Shaker Premium',
     brand: 'FitGear',
     category: 'accesorios',
-    price: 12.99,
+    price: 189,
     description: 'Shaker libre de BPA con compartimento para suplementos y bola mezcladora incluida. Capacidad 700ml.',
     nutritionalInfo: {
       servingSize: 'N/A',
@@ -146,7 +146,7 @@ export const mockProducts: Product[] = [
     name: 'Caseína Nocturna',
     brand: 'ProMax',
     category: 'proteina',
-    price: 49.99,
+    price: 1399,
     description: 'Proteína de absorción lenta ideal para tomar antes de dormir. Libera aminoácidos durante toda la noche.',
     nutritionalInfo: {
       servingSize: '35g',
@@ -172,7 +172,7 @@ export const mockProducts: Product[] = [
     name: 'BCAA Recovery',
     brand: 'PowerLift',
     category: 'pre-workout',
-    price: 34.99,
+    price: 699,
     description: 'Aminoácidos ramificados en ratio 2:1:1 para recuperación muscular y prevención del catabolismo.',
     nutritionalInfo: {
       servingSize: '10g',
@@ -198,7 +198,7 @@ export const mockProducts: Product[] = [
     name: 'Glutamina Ultra',
     brand: 'EnergyMax',
     category: 'proteina',
-    price: 27.99,
+    price: 549,
     description: 'L-Glutamina pura para recuperación muscular y soporte del sistema inmunológico.',
     nutritionalInfo: {
       servingSize: '5g',
@@ -224,7 +224,7 @@ export const mockProducts: Product[] = [
     name: 'Guantes de Entrenamiento',
     brand: 'FitGear',
     category: 'accesorios',
-    price: 19.99,
+    price: 329,
     description: 'Guantes acolchados con soporte de muñeca para levantamiento de pesas. Material transpirable.',
     nutritionalInfo: {
       servingSize: 'N/A',
@@ -246,7 +246,7 @@ export const mockProducts: Product[] = [
     name: 'Creatina HCL',
     brand: 'PowerLift',
     category: 'creatina',
-    price: 35.99,
+    price: 759,
     description: 'Creatina HCL de alta biodisponibilidad. No requiere fase de carga y mejor absorción.',
     nutritionalInfo: {
       servingSize: '2g',
@@ -272,7 +272,7 @@ export const mockProducts: Product[] = [
     name: 'Pre-Workout Natural',
     brand: 'EnergyMax',
     category: 'pre-workout',
-    price: 32.99,
+    price: 629,
     description: 'Pre-entreno con ingredientes naturales, sin estimulantes artificiales. Con cafeína de té verde.',
     nutritionalInfo: {
       servingSize: '12g',
@@ -299,7 +299,7 @@ export const mockProducts: Product[] = [
     name: 'Proteína Vegana',
     brand: 'ProMax',
     category: 'proteina',
-    price: 42.99,
+    price: 1199,
     description: 'Proteína vegetal de guisante y arroz. 100% plant-based con perfil completo de aminoácidos.',
     nutritionalInfo: {
       servingSize: '30g',
@@ -325,7 +325,7 @@ export const mockProducts: Product[] = [
     name: 'Cinturón de Levantamiento',
     brand: 'FitGear',
     category: 'accesorios',
-    price: 49.99,
+    price: 999,
     description: 'Cinturón de cuero genuino para soporte lumbar en levantamientos pesados. Hebilla de doble cierre.',
     nutritionalInfo: {
       servingSize: 'N/A',
@@ -390,7 +390,7 @@ export const mockOrders: Order[] = [
         quantity: 1
       }
     ],
-    total: 121.97,
+    total: 3247,
     status: 'entregado',
     shippingAddress: {
       id: 'a1',
@@ -414,7 +414,7 @@ export const mockOrders: Order[] = [
         quantity: 1
       }
     ],
-    total: 39.99,
+    total: 799,
     status: 'enviado',
     shippingAddress: {
       id: 'a1',
@@ -499,8 +499,8 @@ export const mockSalesData: SalesData[] = Array.from({ length: 30 }, (_, i) => {
   date.setDate(date.getDate() - (29 - i));
   
   // Generar datos aleatorios pero realistas
-  const baseOrders = 5 + Math.floor(Math.random() * 10);
-  const avgOrderValue = 50 + Math.random() * 100;
+  const baseOrders = 4 + Math.floor(Math.random() * 9);
+  const avgOrderValue = 750 + Math.random() * 1500;
   const sales = baseOrders * avgOrderValue;
   
   return {
