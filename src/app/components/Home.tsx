@@ -100,7 +100,7 @@ export const Home: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Hero Banner with Carousel */}
       <section className="relative bg-[#0F0F0F] text-white overflow-hidden">
         <Carousel
@@ -159,7 +159,7 @@ export const Home: React.FC = () => {
       </section>
 
       {/* Categorías Principales */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-muted">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl mb-8 text-center">Categorías Principales</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -173,7 +173,7 @@ export const Home: React.FC = () => {
                         <Icon className="h-8 w-8 text-white" />
                       </div>
                       <h3 className="text-xl mb-2">{category.name}</h3>
-                      <p className="text-gray-600 text-sm">{category.description}</p>
+                      <p className="text-muted-foreground text-sm">{category.description}</p>
                     </CardContent>
                   </Card>
                 </Link>
@@ -209,7 +209,7 @@ export const Home: React.FC = () => {
                     )}
                   </div>
                   <div className="p-4">
-                    <p className="text-sm text-gray-600 mb-1">{product.brand}</p>
+                    <p className="text-sm text-muted-foreground mb-1">{product.brand}</p>
                     <h3 className="mb-2 line-clamp-2">{product.name}</h3>
                     <div className="flex items-center gap-1 mb-2">
                       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -245,7 +245,7 @@ export const Home: React.FC = () => {
       </section>
 
       {/* Más Vendidos */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-muted">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl">Más Vendidos</h2>
@@ -268,7 +268,7 @@ export const Home: React.FC = () => {
                     </Badge>
                   </div>
                   <div className="p-4">
-                    <p className="text-sm text-gray-600 mb-1">{product.brand}</p>
+                    <p className="text-sm text-muted-foreground mb-1">{product.brand}</p>
                     <h3 className="mb-2 line-clamp-2">{product.name}</h3>
                     <div className="flex items-center gap-1 mb-2">
                       <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -305,7 +305,7 @@ export const Home: React.FC = () => {
                       <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                     ))}
                   </div>
-                  <p className="text-gray-700 mb-4">"{testimonial.text}"</p>
+                  <p className="text-muted-foreground mb-4">"{testimonial.text}"</p>
                   <p className="font-medium">- {testimonial.name}</p>
                 </CardContent>
               </Card>

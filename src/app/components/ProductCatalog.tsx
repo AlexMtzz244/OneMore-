@@ -111,7 +111,7 @@ export const ProductCatalog: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-background text-foreground py-8">
       <div className="container mx-auto px-4">
         <div className="mb-6">
           <h1 className="text-3xl mb-2">

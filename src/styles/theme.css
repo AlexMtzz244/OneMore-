@@ -10,21 +10,21 @@
   --popover-foreground: #1a1a1a;
   --primary: #2563eb;
   --primary-foreground: #ffffff;
-  --secondary: #ffffff;
+  --secondary: #f3f4f6;
   --secondary-foreground: #1a1a1a;
-  --muted: #fafafa;
+  --muted: #f5f5f5;
   --muted-foreground: #737373;
-  --accent: #ffffff;
+  --accent: #f8fafc;
   --accent-foreground: #1a1a1a;
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #f5f5f5;
-  --input: transparent;
+  --border: #d1d5db;
+  --input: #cbd5e1;
   --input-background: #ffffff;
-  --switch-background: #e5e5e5;
+  --switch-background: #d1d5db;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: #d4d4d4;
+  --ring: #93c5fd;
   --chart-1: #3b82f6;
   --chart-2: #06b6d4;
   --chart-3: #8b5cf6;
@@ -37,30 +37,32 @@
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #ffffff;
   --sidebar-accent-foreground: #1a1a1a;
-  --sidebar-border: #f5f5f5;
-  --sidebar-ring: #d4d4d4;
+  --sidebar-border: #d1d5db;
+  --sidebar-ring: #93c5fd;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
+  --background: #111827;
+  --foreground: #f9fafb;
+  --card: #1f2937;
+  --card-foreground: #f9fafb;
+  --popover: #1f2937;
+  --popover-foreground: #f9fafb;
+  --primary: #60a5fa;
+  --primary-foreground: #0f172a;
+  --secondary: #1f2937;
+  --secondary-foreground: #e5e7eb;
+  --muted: #1f2937;
+  --muted-foreground: #9ca3af;
+  --accent: #273449;
+  --accent-foreground: #f9fafb;
+  --destructive: #ef4444;
+  --destructive-foreground: #fee2e2;
+  --border: #374151;
+  --input: #4b5563;
+  --input-background: #111827;
+  --switch-background: #4b5563;
+  --ring: #60a5fa;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
   --chart-1: oklch(0.488 0.243 264.376);
@@ -68,14 +70,14 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  --sidebar: #111827;
+  --sidebar-foreground: #f9fafb;
+  --sidebar-primary: #60a5fa;
+  --sidebar-primary-foreground: #0f172a;
+  --sidebar-accent: #1f2937;
+  --sidebar-accent-foreground: #f9fafb;
+  --sidebar-border: #374151;
+  --sidebar-ring: #60a5fa;
 }
 
 @theme inline {
@@ -126,6 +128,36 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Bridge legacy utility colors so existing screens switch cleanly in dark mode. */
+  .dark .bg-white {
+    background-color: var(--card);
+  }
+
+  .dark .bg-gray-50 {
+    background-color: var(--muted);
+  }
+
+  .dark .border-gray-100,
+  .dark .border-gray-200,
+  .dark .border-gray-700 {
+    border-color: var(--border);
+  }
+
+  .dark .text-gray-900 {
+    color: var(--foreground);
+  }
+
+  .dark .text-gray-700,
+  .dark .text-gray-600,
+  .dark .text-gray-500,
+  .dark .text-gray-400 {
+    color: var(--muted-foreground);
+  }
+
+  .dark .hover\:bg-gray-50:hover {
+    background-color: var(--muted);
   }
 
   /**

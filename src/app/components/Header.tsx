@@ -33,7 +33,7 @@ export const Header: React.FC = () => {
   const cartItemsCount = getCartItemsCount();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white shadow-sm">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background text-foreground shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -112,13 +112,13 @@ export const Header: React.FC = () => {
                   <Button variant="ghost" size="icon" className="relative">
                     <User className="h-5 w-5" />
                     {/* Indicador de usuario activo */}
-                    <span className="absolute bottom-0 right-0 h-2 w-2 bg-green-500 rounded-full border-2 border-white"></span>
+                    <span className="absolute bottom-0 right-0 h-2 w-2 bg-green-500 rounded-full border-2 border-background"></span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 bg-white border border-gray-200 shadow-lg">
-                  <div className="px-2 py-1.5 border-b border-gray-100">
-                    <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                    <p className="text-xs text-gray-500">{user.email}</p>
+                <DropdownMenuContent align="end" className="w-56 bg-popover border border-border text-popover-foreground shadow-lg">
+                  <div className="px-2 py-1.5 border-b border-border">
+                    <p className="text-sm font-medium text-foreground">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">{user.email}</p>
                   </div>
                   <div className="py-1">
                     <DropdownMenuItem 
@@ -170,7 +170,7 @@ export const Header: React.FC = () => {
                   <div className="py-1">
                     <DropdownMenuItem 
                       onClick={handleLogout} 
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 cursor-pointer"
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                     >
                       <LogOut className="mr-2 h-4 w-4" />
                       Cerrar Sesión

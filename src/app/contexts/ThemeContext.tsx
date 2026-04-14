@@ -13,19 +13,20 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [theme, setTheme] = useState<Theme>('light');
 
   useEffect(() => {
-    // Cargar tema desde localStorage
-    const storedTheme = localStorage.getItem('theme') as Theme;
-    if (storedTheme) {
+    // Cargar tema desde localStorage de forma segura
+    const storedTheme = localStorage.getItem('theme');
+    if (storedTheme === 'light' || storedTheme === 'dark') {
       setTheme(storedTheme);
-      document.documentElement.classList.toggle('dark', storedTheme === 'dark');
     }
   }, []);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    setTheme((prevTheme) => (prevTheme === 'light' ? 'dark' : 'light'));
   };
 
   return (

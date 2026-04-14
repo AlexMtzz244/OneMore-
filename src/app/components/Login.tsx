@@ -96,7 +96,7 @@ export const Login: React.FC = () => {
   const isLoading = loading || loginLoading || registerLoading;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-background text-foreground py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-md mx-auto">
           <Card>

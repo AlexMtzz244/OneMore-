@@ -349,15 +349,13 @@ Método de pago: ${order.paymentMethod}
   };
 
   return (
-    <div className={`min-h-screen ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-gray-50'}`}>
+    <div className="min-h-screen bg-background text-foreground">
       <div className="flex">
         {/* Sidebar */}
         <aside
           className={`${
             sidebarOpen ? 'w-64' : 'w-20'
-          } ${
-            theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-          } border-r transition-all duration-300 fixed left-0 top-0 h-screen z-20`}
+          } bg-card border-border border-r transition-all duration-300 fixed left-0 top-0 h-screen z-20`}
         >
           <div className="p-4 flex items-center justify-between">
             {sidebarOpen && <h1 className="text-xl font-bold">Dashboard</h1>}
@@ -429,7 +427,7 @@ Método de pago: ${order.paymentMethod}
         {/* Main Content */}
         <main className={`flex-1 ${sidebarOpen ? 'ml-64' : 'ml-20'} transition-all duration-300`}>
           {/* Top Bar */}
-          <header className={`${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b p-4 flex justify-between items-center sticky top-0 z-10`}>
+          <header className="bg-card border-border border-b p-4 flex justify-between items-center sticky top-0 z-10">
             <div>
               <h2 className="text-2xl">Bienvenido, {user.name}</h2>
               <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -454,7 +452,7 @@ Método de pago: ${order.paymentMethod}
 
                 {/* Notifications Panel */}
                 {notificationsPanelOpen && (
-                  <Card className={`absolute right-0 top-12 w-80 ${theme === 'dark' ? 'bg-gray-800' : 'bg-white'} shadow-lg z-50`}>
+                  <Card className="absolute right-0 top-12 w-80 bg-card border-border shadow-lg z-50">
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                       <CardTitle className="text-sm">Notificaciones</CardTitle>
                       {unreadCount > 0 && (
@@ -477,7 +475,7 @@ Método de pago: ${order.paymentMethod}
                           notifications.map((notif) => (
                             <div
                               key={notif.id}
-                              className={`p-4 border-b cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                              className={`p-4 border-b border-border cursor-pointer hover:bg-muted ${
                                 !notif.read ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                               }`}
                               onClick={() => markAsRead(notif.id)}
@@ -998,7 +996,7 @@ Método de pago: ${order.paymentMethod}
                         orders.map((order) => (
                           <div
                             key={order.id}
-                            className={`border rounded-lg p-4 ${theme === 'dark' ? 'border-gray-700 bg-gray-800/50' : 'bg-white'}`}
+                            className="border border-border rounded-lg bg-card p-4"
                           >
                             <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                               <div className="flex-1">
@@ -1138,9 +1136,7 @@ Método de pago: ${order.paymentMethod}
                       {mockActivityLogs.map((log) => (
                         <div
                           key={log.id}
-                          className={`flex items-start gap-4 p-4 rounded-lg ${
-                            theme === 'dark' ? 'bg-gray-800/50 border border-gray-700' : 'bg-gray-50'
-                          }`}
+                          className="flex items-start gap-4 rounded-lg border border-border bg-muted p-4"
                         >
                           <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center shrink-0">
                             <Activity className="h-5 w-5 text-blue-600" />
