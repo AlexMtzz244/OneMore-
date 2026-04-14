@@ -11,21 +11,23 @@ import { toast } from 'sonner';
 export const Login: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, register } = useAuth();
+  const { login, register, loading } = useAuth();
 
   // Estado para Login
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
 
   // Estado para Registro
   const [registerName, setRegisterName] = useState('');
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
+  const [registerLoading, setRegisterLoading] = useState(false);
 
   const from = (location.state as any)?.from?.pathname || '/';
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!loginEmail || !loginPassword) {
@@ -33,16 +35,26 @@ export const Login: React.FC = () => {
       return;
     }
 
-    const success = login(loginEmail, loginPassword);
-    if (success) {
+    try {
+      setLoginLoading(true);
+      await login(loginEmail, loginPassword);
       toast.success('¡Bienvenido de vuelta!');
-      navigate(from, { replace: true });
-    } else {
-      toast.error('Email o contraseña incorrectos');
+      // Clear form
+      setLoginEmail('');
+      setLoginPassword('');
+      // Navigate after successful login
+      setTimeout(() => {
+        navigate(from, { replace: true });
+      }, 500);
+    } catch (error: any) {
+      // Error already handled and displayed by AuthContext
+      console.error('Login error:', error);
+    } finally {
+      setLoginLoading(false);
     }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!registerName || !registerEmail || !registerPassword || !registerConfirmPassword) {
@@ -60,14 +72,28 @@ export const Login: React.FC = () => {
       return;
     }
 
-    const success = register(registerEmail, registerPassword, registerName);
-    if (success) {
+    try {
+      setRegisterLoading(true);
+      await register(registerEmail, registerPassword, registerName);
       toast.success('¡Cuenta creada exitosamente!');
-      navigate(from, { replace: true });
-    } else {
-      toast.error('El email ya está registrado');
+      // Clear form
+      setRegisterName('');
+      setRegisterEmail('');
+      setRegisterPassword('');
+      setRegisterConfirmPassword('');
+      // Navigate after successful registration
+      setTimeout(() => {
+        navigate(from, { replace: true });
+      }, 500);
+    } catch (error: any) {
+      // Error already handled and displayed by AuthContext
+      console.error('Register error:', error);
+    } finally {
+      setRegisterLoading(false);
     }
   };
+
+  const isLoading = loading || loginLoading || registerLoading;
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -80,8 +106,12 @@ export const Login: React.FC = () => {
             <CardContent>
               <Tabs defaultValue="login">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">Iniciar Sesión</TabsTrigger>
-                  <TabsTrigger value="register">Registrarse</TabsTrigger>
+                  <TabsTrigger value="login" disabled={isLoading}>
+                    Iniciar Sesión
+                  </TabsTrigger>
+                  <TabsTrigger value="register" disabled={isLoading}>
+                    Registrarse
+                  </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="login">
@@ -94,6 +124,7 @@ export const Login: React.FC = () => {
                         placeholder="tu@email.com"
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
+                        disabled={isLoading}
                       />
                     </div>
                     <div>
@@ -104,21 +135,23 @@ export const Login: React.FC = () => {
                         placeholder="••••••"
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
+                        disabled={isLoading}
                       />
                     </div>
-                    <Button type="submit" className="w-full">
-                      Iniciar Sesión
+                    <Button 
+                      type="submit" 
+                      className="w-full"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
                     </Button>
 
                     <div className="mt-6 p-4 bg-blue-50 rounded-lg">
                       <p className="text-sm text-blue-800 mb-2">
-                        <strong>Cuentas de prueba:</strong>
+                        <strong>Prueba aquí:</strong>
                       </p>
                       <p className="text-xs text-blue-700">
-                        <strong>Admin:</strong> admin@onemore.com / admin123
-                      </p>
-                      <p className="text-xs text-blue-700">
-                        <strong>Cliente:</strong> cliente@example.com / cliente123
+                        Crea una nueva cuenta o usa Firebase Authentication directamente.
                       </p>
                     </div>
                   </form>
@@ -134,6 +167,7 @@ export const Login: React.FC = () => {
                         placeholder="Tu nombre"
                         value={registerName}
                         onChange={(e) => setRegisterName(e.target.value)}
+                        disabled={isLoading}
                       />
                     </div>
                     <div>
@@ -144,6 +178,7 @@ export const Login: React.FC = () => {
                         placeholder="tu@email.com"
                         value={registerEmail}
                         onChange={(e) => setRegisterEmail(e.target.value)}
+                        disabled={isLoading}
                       />
                     </div>
                     <div>
@@ -154,6 +189,7 @@ export const Login: React.FC = () => {
                         placeholder="Mínimo 6 caracteres"
                         value={registerPassword}
                         onChange={(e) => setRegisterPassword(e.target.value)}
+                        disabled={isLoading}
                       />
                     </div>
                     <div>
@@ -164,10 +200,15 @@ export const Login: React.FC = () => {
                         placeholder="Repite tu contraseña"
                         value={registerConfirmPassword}
                         onChange={(e) => setRegisterConfirmPassword(e.target.value)}
+                        disabled={isLoading}
                       />
                     </div>
-                    <Button type="submit" className="w-full">
-                      Crear Cuenta
+                    <Button 
+                      type="submit" 
+                      className="w-full"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Creando cuenta...' : 'Crear Cuenta'}
                     </Button>
                   </form>
                 </TabsContent>

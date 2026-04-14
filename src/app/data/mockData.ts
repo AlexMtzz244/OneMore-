@@ -1,11 +1,10 @@
 import { Product, User, Order, Review, Coupon, ActivityLog, SalesData } from '../types';
 
-// Usuarios mock (contraseñas en texto plano solo para demo)
+// Usuarios mock - Solo referencia ya que la autenticación usa Firebase
 export const mockUsers: User[] = [
   {
     id: '1',
     email: 'admin@onemore.com',
-    password: 'admin123',
     name: 'Administrador',
     role: 'administrador',
     addresses: [],
@@ -14,7 +13,6 @@ export const mockUsers: User[] = [
   {
     id: '2',
     email: 'cliente@example.com',
-    password: 'cliente123',
     name: 'Juan Pérez',
     role: 'cliente',
     addresses: [
@@ -33,7 +31,6 @@ export const mockUsers: User[] = [
   {
     id: '3',
     email: 'maria@example.com',
-    password: 'maria123',
     name: 'María García',
     role: 'cliente',
     addresses: [],
