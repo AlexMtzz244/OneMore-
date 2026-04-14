@@ -140,15 +140,15 @@ export const Home: React.FC = () => {
                   size="lg"
                   variant="secondary"
                   onClick={() => navigate('/productos')}
-                  className="bg-white text-black hover:bg-gray-200"
+                  className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
                 >
                   Comprar Ahora
                 </Button>
                 <Button
                   size="lg"
-                  variant="outline"
+                  variant="secondary"
                   onClick={() => navigate('/productos')}
-                  className="bg-white text-black hover:bg-gray-200"
+                  className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
                 >
                   Ver Catálogo
                 </Button>
