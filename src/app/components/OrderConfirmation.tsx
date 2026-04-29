@@ -10,7 +10,10 @@ export const OrderConfirmation: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { formatPrice } = useCurrency();
-  const order = (location.state as any)?.order as Order | undefined;
+  const orderFromState = (location.state as any)?.order as Order | undefined;
+  const lastOrderRaw = typeof window !== 'undefined' ? localStorage.getItem('lastOrder') : null;
+  const orderFromStorage = lastOrderRaw ? (JSON.parse(lastOrderRaw) as Order) : undefined;
+  const order = orderFromState || orderFromStorage;
 
   if (!order) {
     navigate('/');

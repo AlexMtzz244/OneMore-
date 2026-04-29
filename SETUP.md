@@ -72,7 +72,7 @@ OneMore-/
 │   ├── app/
 │   │   ├── components/        # Componentes de React
 │   │   ├── contexts/          # Context API (Auth, Cart, etc.)
-│   │   ├── data/              # Datos mock
+│   │   ├── data/              # Datos iniciales
 │   │   └── types/             # Definiciones de TypeScript
 │   ├── styles/                # Estilos CSS
 │   └── main.tsx              # Punto de entrada
@@ -146,22 +146,44 @@ Ya está solucionado en el proyecto. Si lo ves, asegúrate de tener la última v
 - ✅ Tema oscuro/claro
 - ✅ Responsive design
 
-## 🔐 Usuarios de Prueba
-
-### Usuario Normal
-- Email: `user@example.com`
-- Password: `password123`
-
-### Administrador
-- Email: `admin@example.com`
-- Password: `admin123`
-
 ## 📝 Notas Adicionales
 
-- El proyecto usa **datos mock** (no hay backend real)
+- El proyecto usa datos almacenados en localStorage para catalogo y pedidos
 - Los cambios en el código se reflejan automáticamente (HMR)
 - Los estilos se compilan con Tailwind CSS v4
 - Las rutas están protegidas según el tipo de usuario
+
+## 💳 Pagos (PayPal + Tarjeta)
+
+El checkout usa PayPal Smart Buttons (incluye pago con tarjeta como Mastercard) con API routes serverless.
+
+Nota: las rutas `/api/*` funcionan en Vercel. Para probar pagos en local, usa `vercel dev` (o prueba directamente en el despliegue).
+
+Variables de entorno:
+
+```
+VITE_APP_URL=https://tu-dominio.com
+
+# Cliente (público)
+VITE_PAYPAL_CLIENT_ID=
+
+# Servidor (secreto)
+PAYPAL_CLIENT_ID=
+PAYPAL_CLIENT_SECRET=
+
+# sandbox | live
+PAYPAL_ENV=sandbox
+```
+
+## 🔒 Acceso al Panel Admin
+
+El acceso a `/admin` se controla por lista de correos (allowlist). Puedes inicializarla con:
+
+```
+VITE_ADMIN_EMAILS=admin@tudominio.com,otro@tudominio.com
+```
+
+Luego, dentro del panel (Usuarios) puedes agregar/quitar correos administradores.
 
 ## 🤝 Colaboración
 

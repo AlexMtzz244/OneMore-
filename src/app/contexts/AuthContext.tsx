@@ -19,6 +19,8 @@ interface AuthContextType {
   isAdmin: () => boolean;
   updateUser: (updatedUser: User) => void;
   authError: string | null;
+  adminEmails: string[];
+  setAdminEmails: (emails: string[]) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,6 +29,78 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [adminEmails, setAdminEmailsState] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem('adminEmails');
+      if (!raw) return [];
+      const parsed = JSON.parse(raw) as unknown;
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .map((e) => (typeof e === 'string' ? e.trim().toLowerCase() : ''))
+        .filter(Boolean);
+    } catch {
+      return [];
+    }
+  });
+
+  const normalizeEmail = (email: string) => email.trim().toLowerCase();
+
+  const readAdminEmails = (): string[] => {
+    const raw = localStorage.getItem('adminEmails');
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .map((e) => (typeof e === 'string' ? normalizeEmail(e) : ''))
+        .filter(Boolean);
+    } catch {
+      return [];
+    }
+  };
+
+  const setAdminEmails = (emails: string[]) => {
+    const normalized = Array.from(
+      new Set(
+        emails
+          .map((e) => (typeof e === 'string' ? normalizeEmail(e) : ''))
+          .filter(Boolean)
+      )
+    );
+    localStorage.setItem('adminEmails', JSON.stringify(normalized));
+    setAdminEmailsState(normalized);
+  };
+
+  useEffect(() => {
+    if (adminEmails.length > 0) return;
+
+    const env = (import.meta as any)?.env?.VITE_ADMIN_EMAILS as string | undefined;
+    if (!env) return;
+
+    const list = env
+      .split(',')
+      .map((e) => normalizeEmail(e))
+      .filter(Boolean);
+    if (list.length === 0) return;
+
+    localStorage.setItem('adminEmails', JSON.stringify(list));
+    setAdminEmailsState(list);
+  }, []);
+
+  const persistUserRecord = (record: User) => {
+    const stored = localStorage.getItem('users');
+    const users: User[] = stored ? JSON.parse(stored) : [];
+    const index = users.findIndex((u) => u.id === record.id);
+    const nextUsers = [...users];
+
+    if (index >= 0) {
+      nextUsers[index] = { ...nextUsers[index], ...record };
+    } else {
+      nextUsers.push(record);
+    }
+
+    localStorage.setItem('users', JSON.stringify(nextUsers));
+  };
 
   // Listen for auth state changes from Firebase
   useEffect(() => {
@@ -34,12 +108,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         if (firebaseUser) {
           // User is logged in - convert Firebase User to our User type
+          const email = firebaseUser.email || '';
+          const currentAdminEmails = readAdminEmails();
+          const isEmailAdmin = email ? currentAdminEmails.includes(normalizeEmail(email)) : false;
+
           const userData: User = {
             id: firebaseUser.uid,
-            email: firebaseUser.email || '',
+            email,
             name: firebaseUser.displayName || 'Usuario',
             photoURL: firebaseUser.photoURL || undefined,
-            role: 'cliente', // Default role - could be stored in Firebase or database
+            role: isEmailAdmin ? 'administrador' : 'cliente',
             addresses: [],
             createdAt: firebaseUser.metadata?.creationTime || new Date().toISOString()
           };
@@ -49,9 +127,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (storedUserData) {
             const parsed = JSON.parse(storedUserData);
             userData.addresses = parsed.addresses || [];
-            userData.role = parsed.role || 'cliente';
+            // If the email is on the admin allowlist, force admin role.
+            userData.role = isEmailAdmin ? 'administrador' : (parsed.role || 'cliente');
           }
-          
+          persistUserRecord(userData);
           setUser(userData);
         } else {
           // User is logged out
@@ -139,13 +218,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const isAdmin = (): boolean => {
-    return user?.role === 'administrador';
+    if (!user?.email) return false;
+    return adminEmails.includes(normalizeEmail(user.email));
   };
 
   const updateUser = (updatedUser: User) => {
     setUser(updatedUser);
     // Store additional user data in localStorage (Firebase only stores basic profile)
     localStorage.setItem(`user_${updatedUser.id}`, JSON.stringify(updatedUser));
+    persistUserRecord(updatedUser);
   };
 
   return (
@@ -158,7 +239,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         register, 
         isAdmin, 
         updateUser,
-        authError
+        authError,
+        adminEmails,
+        setAdminEmails
       }}
     >
       {children}

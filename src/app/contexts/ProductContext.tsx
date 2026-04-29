@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Product, Review, Order } from '../types';
-import { mockProducts, mockReviews, mockOrders } from '../data/mockData';
+import { catalogProducts, initialReviews, initialOrders } from '../data/mockData';
 
 interface ProductContextType {
   products: Product[];
@@ -26,14 +26,14 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    // Cargar desde localStorage o usar datos mock
+    // Cargar desde localStorage o usar datos iniciales
     const storedProducts = localStorage.getItem('products');
     const storedReviews = localStorage.getItem('reviews');
     const storedOrders = localStorage.getItem('orders');
 
-    setProducts(storedProducts ? JSON.parse(storedProducts) : mockProducts);
-    setReviews(storedReviews ? JSON.parse(storedReviews) : mockReviews);
-    setOrders(storedOrders ? JSON.parse(storedOrders) : mockOrders);
+    setProducts(storedProducts ? JSON.parse(storedProducts) : catalogProducts);
+    setReviews(storedReviews ? JSON.parse(storedReviews) : initialReviews);
+    setOrders(storedOrders ? JSON.parse(storedOrders) : initialOrders);
   }, []);
 
   useEffect(() => {

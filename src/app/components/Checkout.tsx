@@ -8,17 +8,17 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { Separator } from './ui/separator';
 import { toast } from 'sonner';
-import { Order, Address } from '../types';
+import { Address } from '../types';
+import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
 
 export const Checkout: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { cart, getCartTotal, clearCart } = useCart();
-  const { formatPrice } = useCurrency();
-  const { createOrder } = useProducts();
+  const { formatPrice, currency, convertPrice } = useCurrency();
+  const { createOrder: createStoreOrder } = useProducts();
 
   const [shippingAddress, setShippingAddress] = useState<Address>(
     user?.addresses.find((a) => a.isDefault) || {
@@ -32,7 +32,7 @@ export const Checkout: React.FC = () => {
     }
   );
 
-  const [paymentMethod, setPaymentMethod] = useState('credit-card');
+  const [paypalLoading, setPaypalLoading] = useState(false);
 
   // Validar que el usuario esté logueado
   React.useEffect(() => {
@@ -45,44 +45,12 @@ export const Checkout: React.FC = () => {
     }
   }, [user, cart, navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Validar dirección
-    if (!shippingAddress.street || !shippingAddress.city || !shippingAddress.state || !shippingAddress.zipCode) {
-      toast.error('Por favor completa todos los campos de dirección');
-      return;
-    }
-
-    // Crear orden
-    const order: Order = {
-      id: `order_${Date.now()}`,
-      userId: user!.id,
-      items: cart,
-      total: getCartTotal(),
-      status: 'pendiente',
-      shippingAddress,
-      paymentMethod: getPaymentMethodName(paymentMethod),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    createOrder(order);
-    clearCart();
-    
-    toast.success('¡Pedido realizado exitosamente!');
-    navigate('/confirmacion', { state: { order } });
-  };
-
-  const getPaymentMethodName = (method: string) => {
-    const names: Record<string, string> = {
-      'credit-card': 'Tarjeta de Crédito',
-      'debit-card': 'Tarjeta de Débito',
-      'paypal': 'PayPal',
-      'transfer': 'Transferencia Bancaria',
-    };
-    return names[method] || 'Tarjeta de Crédito';
-  };
+  const isAddressComplete =
+    !!shippingAddress.street &&
+    !!shippingAddress.city &&
+    !!shippingAddress.state &&
+    !!shippingAddress.zipCode &&
+    !!shippingAddress.country;
 
   const getDiscountedPrice = (price: number, discount?: number) => {
     if (discount) {
@@ -100,13 +68,29 @@ export const Checkout: React.FC = () => {
     return null;
   }
 
+  const paypalClientId = import.meta.env.VITE_PAYPAL_CLIENT_ID as string | undefined;
+
+  const normalizedAddress: Address = {
+    ...shippingAddress,
+    id: shippingAddress.id || `addr_${Date.now()}`,
+  };
+
+  const paypalItems = cart.map((item) => {
+    const priceMXN = getDiscountedPrice(item.product.price, item.product.discount);
+    return {
+      id: item.product.id,
+      name: item.product.name,
+      quantity: item.quantity,
+      unitAmount: convertPrice(priceMXN),
+    };
+  });
+
   return (
     <div className="min-h-screen bg-background text-foreground py-8">
       <div className="container mx-auto px-4">
         <h1 className="text-3xl mb-8">Finalizar Compra</h1>
 
-        <form onSubmit={handleSubmit}>
-          <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid lg:grid-cols-3 gap-6">
             {/* Formulario */}
             <div className="lg:col-span-2 space-y-6">
               {/* Dirección de Envío */}
@@ -182,47 +166,6 @@ export const Checkout: React.FC = () => {
                 </CardContent>
               </Card>
 
-              {/* Método de Pago */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Método de Pago</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
-                    <div className="flex items-center space-x-2 p-3 border rounded-lg">
-                      <RadioGroupItem value="credit-card" id="credit-card" />
-                      <Label htmlFor="credit-card" className="flex-1 cursor-pointer">
-                        Tarjeta de Crédito
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2 p-3 border rounded-lg">
-                      <RadioGroupItem value="debit-card" id="debit-card" />
-                      <Label htmlFor="debit-card" className="flex-1 cursor-pointer">
-                        Tarjeta de Débito
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2 p-3 border rounded-lg">
-                      <RadioGroupItem value="paypal" id="paypal" />
-                      <Label htmlFor="paypal" className="flex-1 cursor-pointer">
-                        PayPal
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-2 p-3 border rounded-lg">
-                      <RadioGroupItem value="transfer" id="transfer" />
-                      <Label htmlFor="transfer" className="flex-1 cursor-pointer">
-                        Transferencia Bancaria
-                      </Label>
-                    </div>
-                  </RadioGroup>
-
-                  <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm text-yellow-800">
-                      <strong>Nota:</strong> Este es un sistema de pago simulado. 
-                      No se procesarán pagos reales.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
 
             {/* Resumen del Pedido */}
@@ -275,9 +218,108 @@ export const Checkout: React.FC = () => {
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full" size="lg">
-                    Confirmar Pedido
-                  </Button>
+                  {!paypalClientId ? (
+                    <div className="rounded-md border p-4 text-sm text-muted-foreground">
+                      Falta configurar PayPal. Define <strong>VITE_PAYPAL_CLIENT_ID</strong>.
+                    </div>
+                  ) : (
+                    <PayPalScriptProvider
+                      options={{
+                        clientId: paypalClientId,
+                        currency,
+                        intent: 'capture',
+                        components: 'buttons',
+                      }}
+                    >
+                      <div className="space-y-3">
+                        {!isAddressComplete && (
+                          <div className="rounded-md border p-3 text-sm text-muted-foreground">
+                            Completa tu dirección de envío para habilitar el pago.
+                          </div>
+                        )}
+                        <PayPalButtons
+                          disabled={!isAddressComplete || paypalLoading}
+                          style={{ layout: 'vertical', label: 'pay' }}
+                          fundingSource={undefined}
+                          createOrder={async () => {
+                            if (!isAddressComplete) {
+                              toast.error('Por favor completa tu dirección de envío');
+                              throw new Error('Missing shipping address');
+                            }
+
+                            const response = await fetch('/api/paypal-create-order', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({
+                                items: paypalItems,
+                                currency,
+                              }),
+                            });
+
+                            const payload = await response.json().catch(() => null);
+                            if (!response.ok || !payload?.id) {
+                              if (response.status === 404) {
+                                toast.error('Pago no disponible en modo local. Prueba en Vercel o con `vercel dev`.');
+                              }
+                              throw new Error('No se pudo iniciar el pago');
+                            }
+
+                            return payload.id as string;
+                          }}
+                          onApprove={async (data) => {
+                            try {
+                              setPaypalLoading(true);
+
+                              const response = await fetch('/api/paypal-capture-order', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ orderId: data.orderID }),
+                              });
+
+                              const capture = await response.json().catch(() => null);
+                              if (!response.ok || capture?.status !== 'COMPLETED') {
+                                if (response.status === 404) {
+                                  toast.error('Pago no disponible en modo local. Prueba en Vercel o con `vercel dev`.');
+                                }
+                                throw new Error('Pago no confirmado');
+                              }
+
+                              const orderDraft = {
+                                id: `order_${Date.now()}`,
+                                userId: user.id,
+                                items: cart,
+                                total: getCartTotal(),
+                                status: 'pendiente' as const,
+                                shippingAddress: normalizedAddress,
+                                paymentMethod: 'PayPal / Tarjeta',
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString(),
+                              };
+
+                              createStoreOrder(orderDraft);
+                              clearCart();
+                              localStorage.setItem('lastOrder', JSON.stringify(orderDraft));
+
+                              toast.success('Pago confirmado');
+                              navigate('/confirmacion', { state: { order: orderDraft } });
+                            } catch (error) {
+                              console.error('PayPal approve error:', error);
+                              toast.error('No pudimos confirmar el pago. Intenta de nuevo.');
+                            } finally {
+                              setPaypalLoading(false);
+                            }
+                          }}
+                          onCancel={() => {
+                            toast.message('Pago cancelado');
+                          }}
+                          onError={(error) => {
+                            console.error('PayPal error:', error);
+                            toast.error('No se pudo procesar el pago. Intenta de nuevo.');
+                          }}
+                        />
+                      </div>
+                    </PayPalScriptProvider>
+                  )}
 
                   <Button
                     type="button"
@@ -291,7 +333,6 @@ export const Checkout: React.FC = () => {
               </Card>
             </div>
           </div>
-        </form>
       </div>
     </div>
   );

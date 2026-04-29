@@ -52,12 +52,11 @@ import {
   Menu,
   X,
 } from 'lucide-react';
-import { Product, ProductCategory, ProductGoal, Order, OrderStatus, User as UserType } from '../types';
-import { mockActivityLogs, mockSalesData, mockUsers } from '../data/mockData';
+import { Product, ProductCategory, ProductGoal, Order, OrderStatus, User as UserType, ActivityLog } from '../types';
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, adminEmails, setAdminEmails, updateUser } = useAuth();
   const { products, addProduct, updateProduct, deleteProduct, getAllOrders, updateOrder } = useProducts();
   const { formatPrice } = useCurrency();
   const { theme, toggleTheme } = useTheme();
@@ -70,6 +69,9 @@ export const AdminDashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [stockFilter, setStockFilter] = useState<'all' | 'low' | 'out'>('all');
   const [notificationsPanelOpen, setNotificationsPanelOpen] = useState(false);
+  const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [allUsers, setAllUsers] = useState<UserType[]>([]);
 
   // Form state for product CRUD
   const [formData, setFormData] = useState<Partial<Product>>({
@@ -104,24 +106,15 @@ export const AdminDashboard: React.FC = () => {
     }
   }, [user, isAdmin, navigate]);
 
-  // Simulate real-time notifications
   useEffect(() => {
-    const interval = setInterval(() => {
-      const randomEvents = [
-        { type: 'sale' as const, message: `Nueva venta realizada: ${formatPrice(1299)}` },
-        { type: 'order' as const, message: 'Nuevo pedido recibido' },
-        { type: 'stock' as const, message: 'Alerta: Stock bajo en Whey Protein' },
-        { type: 'user' as const, message: 'Nuevo usuario registrado' },
-      ];
-      
-      if (Math.random() > 0.8) { // 20% chance every 30 seconds
-        const event = randomEvents[Math.floor(Math.random() * randomEvents.length)];
-        addNotification(event);
-      }
-    }, 30000); // Check every 30 seconds
+    const storedLogs = localStorage.getItem('activityLogs');
+    setActivityLogs(storedLogs ? JSON.parse(storedLogs) : []);
+  }, []);
 
-    return () => clearInterval(interval);
-  }, [addNotification, formatPrice]);
+  useEffect(() => {
+    const storedUsers = localStorage.getItem('users');
+    setAllUsers(storedUsers ? JSON.parse(storedUsers) : []);
+  }, []);
 
   if (!user || !isAdmin()) {
     return null;
@@ -131,11 +124,68 @@ export const AdminDashboard: React.FC = () => {
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
-  // Get all users from localStorage
-  const allUsers: UserType[] = useMemo(() => {
-    const storedUsers = localStorage.getItem('users');
-    return storedUsers ? JSON.parse(storedUsers) : mockUsers;
-  }, []);
+  const normalizeEmail = (email: string) => email.trim().toLowerCase();
+
+  const isEmailAdmin = (email: string) => adminEmails.includes(normalizeEmail(email));
+
+  const persistUsers = (users: UserType[]) => {
+    localStorage.setItem('users', JSON.stringify(users));
+    setAllUsers(users);
+  };
+
+  const toggleAdminForEmail = (email: string, makeAdmin: boolean) => {
+    const normalized = normalizeEmail(email);
+    const nextAdminEmails = makeAdmin
+      ? Array.from(new Set([...adminEmails, normalized]))
+      : adminEmails.filter((e) => e !== normalized);
+    setAdminEmails(nextAdminEmails);
+
+    const nextUsers = allUsers.map((u) => {
+      if (normalizeEmail(u.email) !== normalized) return u;
+      const nextRole = makeAdmin ? 'administrador' : 'cliente';
+      const nextUser = { ...u, role: nextRole };
+      localStorage.setItem(`user_${u.id}`, JSON.stringify(nextUser));
+      if (user && u.id === user.id) {
+        updateUser(nextUser);
+      }
+      return nextUser;
+    });
+    persistUsers(nextUsers);
+
+    appendActivityLog({
+      id: `log_${Date.now()}`,
+      userId: user?.id || 'admin',
+      userName: user?.name || 'Admin',
+      action: makeAdmin ? 'Concedió acceso admin' : 'Revocó acceso admin',
+      target: normalized,
+      timestamp: new Date().toISOString(),
+    });
+  };
+
+  const handleAddAdminEmail = () => {
+    const normalized = normalizeEmail(newAdminEmail);
+    if (!normalized || !normalized.includes('@')) {
+      toast.error('Ingresa un email válido');
+      return;
+    }
+
+    if (adminEmails.includes(normalized)) {
+      toast.message('Ese email ya es admin');
+      return;
+    }
+
+    setAdminEmails([...adminEmails, normalized]);
+    setNewAdminEmail('');
+
+    appendActivityLog({
+      id: `log_${Date.now()}`,
+      userId: user?.id || 'admin',
+      userName: user?.name || 'Admin',
+      action: 'Agregó email admin',
+      target: normalized,
+      timestamp: new Date().toISOString(),
+    });
+  };
 
   // Calculate KPIs
   const thirtyDaysAgo = new Date();
@@ -153,8 +203,45 @@ export const AdminDashboard: React.FC = () => {
     (u) => new Date(u.createdAt) >= thirtyDaysAgo
   ).length;
 
-  const totalVisitors = 1234; // Mock data - in a real app this would come from analytics
+  const totalVisitors = 0;
   const conversionRate = totalVisitors > 0 ? (monthlyOrders.length / totalVisitors) * 100 : 0;
+
+  const salesData = useMemo(() => {
+    const today = new Date();
+    const start = new Date();
+    start.setDate(today.getDate() - 29);
+
+    const dailyMap = new Map<string, { sales: number; orders: number }>();
+    for (let i = 0; i < 30; i += 1) {
+      const date = new Date(start);
+      date.setDate(start.getDate() + i);
+      const key = date.toISOString().split('T')[0];
+      dailyMap.set(key, { sales: 0, orders: 0 });
+    }
+
+    monthlyOrders.forEach((order) => {
+      const key = new Date(order.createdAt).toISOString().split('T')[0];
+      const current = dailyMap.get(key);
+      if (current) {
+        current.sales += order.total;
+        current.orders += 1;
+      }
+    });
+
+    return Array.from(dailyMap.entries()).map(([date, stats]) => ({
+      date,
+      sales: Math.round(stats.sales * 100) / 100,
+      orders: stats.orders,
+    }));
+  }, [monthlyOrders]);
+
+  const appendActivityLog = (entry: ActivityLog) => {
+    setActivityLogs((prev) => {
+      const next = [entry, ...prev].slice(0, 50);
+      localStorage.setItem('activityLogs', JSON.stringify(next));
+      return next;
+    });
+  };
 
   // Filter products
   const filteredProducts = useMemo(() => {
@@ -249,12 +336,28 @@ export const AdminDashboard: React.FC = () => {
         type: 'stock',
         message: `Producto actualizado: ${productData.name}`,
       });
+      appendActivityLog({
+        id: `al_${Date.now()}`,
+        userId: user.id,
+        userName: user.name,
+        action: 'Actualizo producto',
+        target: productData.name,
+        timestamp: new Date().toISOString(),
+      });
     } else {
       addProduct(productData);
       toast.success('Producto agregado exitosamente');
       addNotification({
         type: 'stock',
         message: `Nuevo producto agregado: ${productData.name}`,
+      });
+      appendActivityLog({
+        id: `al_${Date.now()}`,
+        userId: user.id,
+        userName: user.name,
+        action: 'Agrego producto',
+        target: productData.name,
+        timestamp: new Date().toISOString(),
       });
     }
 
@@ -269,6 +372,14 @@ export const AdminDashboard: React.FC = () => {
         type: 'stock',
         message: `Producto eliminado: ${productName}`,
       });
+      appendActivityLog({
+        id: `al_${Date.now()}`,
+        userId: user.id,
+        userName: user.name,
+        action: 'Elimino producto',
+        target: productName,
+        timestamp: new Date().toISOString(),
+      });
     }
   };
 
@@ -282,6 +393,14 @@ export const AdminDashboard: React.FC = () => {
     addNotification({
       type: 'order',
       message: `Pedido #${order.id} actualizado a: ${newStatus}`,
+    });
+    appendActivityLog({
+      id: `al_${Date.now()}`,
+      userId: user.id,
+      userName: user.name,
+      action: 'Actualizo pedido',
+      target: `Pedido #${order.id}`,
+      timestamp: new Date().toISOString(),
     });
   };
 
@@ -593,7 +712,7 @@ Método de pago: ${order.paymentMethod}
                   </CardHeader>
                   <CardContent>
                     <ResponsiveContainer width="100%" height={350}>
-                      <AreaChart data={mockSalesData}>
+                      <AreaChart data={salesData}>
                         <defs>
                           <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
@@ -1080,10 +1199,55 @@ Método de pago: ${order.paymentMethod}
                   <CardHeader>
                     <CardTitle>Gestión de Usuarios</CardTitle>
                     <CardDescription>
-                      Administra los usuarios de la plataforma
+                      Define qué correos pueden acceder al panel y revisa usuarios registrados
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
+                    <div className="space-y-4 mb-6">
+                      <div>
+                        <Label htmlFor="new-admin-email">Agregar correo administrador</Label>
+                        <div className="flex gap-2 mt-2">
+                          <Input
+                            id="new-admin-email"
+                            value={newAdminEmail}
+                            onChange={(e) => setNewAdminEmail(e.target.value)}
+                            placeholder="admin@tudominio.com"
+                          />
+                          <Button type="button" onClick={handleAddAdminEmail}>
+                            Agregar
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Solo los emails en esta lista pueden entrar a /admin.
+                        </p>
+                      </div>
+
+                      <div className="rounded-lg border p-4">
+                        <p className="text-sm font-medium mb-3">Correos administradores</p>
+                        {adminEmails.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">
+                            Aún no hay correos admin configurados.
+                          </p>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {adminEmails.map((email) => (
+                              <Badge key={email} variant="secondary" className="gap-2">
+                                {email}
+                                <button
+                                  type="button"
+                                  className="ml-1"
+                                  onClick={() => toggleAdminForEmail(email, false)}
+                                  aria-label={`Quitar admin a ${email}`}
+                                >
+                                  ×
+                                </button>
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="rounded-lg border overflow-hidden">
                       <Table>
                         <TableHeader>
@@ -1093,6 +1257,7 @@ Método de pago: ${order.paymentMethod}
                             <TableHead>Rol</TableHead>
                             <TableHead>Fecha de Registro</TableHead>
                             <TableHead>Direcciones</TableHead>
+                            <TableHead className="text-right">Acciones</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -1103,16 +1268,34 @@ Método de pago: ${order.paymentMethod}
                               <TableCell>
                                 <Badge
                                   variant={
-                                    u.role === 'administrador' ? 'default' : 'secondary'
+                                    isEmailAdmin(u.email) ? 'default' : 'secondary'
                                   }
                                 >
-                                  {u.role === 'administrador' ? 'Admin' : 'Cliente'}
+                                  {isEmailAdmin(u.email) ? 'Admin' : 'Cliente'}
                                 </Badge>
                               </TableCell>
                               <TableCell>
                                 {new Date(u.createdAt).toLocaleDateString('es-ES')}
                               </TableCell>
                               <TableCell>{u.addresses.length}</TableCell>
+                              <TableCell className="text-right">
+                                {isEmailAdmin(u.email) ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => toggleAdminForEmail(u.email, false)}
+                                  >
+                                    Quitar admin
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => toggleAdminForEmail(u.email, true)}
+                                  >
+                                    Hacer admin
+                                  </Button>
+                                )}
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
@@ -1135,27 +1318,33 @@ Método de pago: ${order.paymentMethod}
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {mockActivityLogs.map((log) => (
-                        <div
-                          key={log.id}
-                          className="flex items-start gap-4 rounded-lg border border-border bg-muted p-4"
-                        >
-                          <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center shrink-0">
-                            <Activity className="h-5 w-5 text-blue-600" />
+                      {activityLogs.length === 0 ? (
+                        <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>
+                          No hay actividad registrada aun
+                        </p>
+                      ) : (
+                        activityLogs.map((log) => (
+                          <div
+                            key={log.id}
+                            className="flex items-start gap-4 rounded-lg border border-border bg-muted p-4"
+                          >
+                            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center shrink-0">
+                              <Activity className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="font-medium">
+                                {log.userName} - {log.action}
+                              </p>
+                              <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                                {log.target}
+                              </p>
+                              <p className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'} mt-1`}>
+                                {formatTimeAgo(log.timestamp)}
+                              </p>
+                            </div>
                           </div>
-                          <div className="flex-1">
-                            <p className="font-medium">
-                              {log.userName} - {log.action}
-                            </p>
-                            <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                              {log.target}
-                            </p>
-                            <p className={`text-xs ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'} mt-1`}>
-                              {formatTimeAgo(log.timestamp)}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
                   </CardContent>
                 </Card>

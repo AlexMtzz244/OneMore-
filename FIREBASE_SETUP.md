@@ -126,7 +126,7 @@ Mensajes genéricos para máxima seguridad:
 - "Este email ya está registrado"
 - "Demasiados intentos. Intenta más tarde"
 
-## 🧪 Pruebas Locales
+## ✅ Validacion Local
 
 ### 1. Iniciar servidor de desarrollo
 
@@ -140,11 +140,9 @@ npm run dev
 http://localhost:5173/login
 ```
 
-### 3. Crear una cuenta de prueba
+### 3. Crear una cuenta
 
-- Email: `test@example.com`
-- Contraseña: `test123456`
-- Nombre: `Test User`
+- Registra un usuario desde la pantalla de login
 
 ### 4. Verificar autenticación
 

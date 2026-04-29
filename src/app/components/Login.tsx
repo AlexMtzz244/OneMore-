@@ -47,8 +47,8 @@ export const Login: React.FC = () => {
         navigate(from, { replace: true });
       }, 500);
     } catch (error: any) {
-      // Error already handled and displayed by AuthContext
       console.error('Login error:', error);
+      toast.error(error?.message || 'No se pudo iniciar sesión');
     } finally {
       setLoginLoading(false);
     }
@@ -86,8 +86,8 @@ export const Login: React.FC = () => {
         navigate(from, { replace: true });
       }, 500);
     } catch (error: any) {
-      // Error already handled and displayed by AuthContext
       console.error('Register error:', error);
+      toast.error(error?.message || 'No se pudo crear la cuenta');
     } finally {
       setRegisterLoading(false);
     }
@@ -146,14 +146,6 @@ export const Login: React.FC = () => {
                       {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
                     </Button>
 
-                    <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                      <p className="text-sm text-blue-800 mb-2">
-                        <strong>Prueba aquí:</strong>
-                      </p>
-                      <p className="text-xs text-blue-700">
-                        Crea una nueva cuenta o usa Firebase Authentication directamente.
-                      </p>
-                    </div>
                   </form>
                 </TabsContent>
 

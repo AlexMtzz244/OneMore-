@@ -184,7 +184,7 @@ export const Cart: React.FC = () => {
                   size="lg"
                   onClick={() => navigate('/checkout')}
                 >
-                  Proceder al Pago
+                  Pagar (PayPal / Tarjeta)
                 </Button>
 
                 <Button
