@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
-import { 
+import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
   updateProfile,
-  User as FirebaseUser
 } from 'firebase/auth';
 import { auth } from '../../lib/firebase';
+import { apiClient } from '../../lib/api-client';
 
 interface AuthContextType {
   user: User | null;
@@ -28,37 +28,40 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
 
-  // Listen for auth state changes from Firebase
+  // ─────────────────────────────────────────────────────────────
+  // Escucha cambios de auth en Firebase (se dispara en cada recarga de página).
+  // Si Firebase tiene un usuario activo, intenta restaurar la sesión desde
+  // la session cookie httpOnly a través del backend Next.js.
+  // ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      if (!fbUser) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
       try {
-        if (firebaseUser) {
-          // User is logged in - convert Firebase User to our User type
-          const userData: User = {
-            id: firebaseUser.uid,
-            email: firebaseUser.email || '',
-            name: firebaseUser.displayName || 'Usuario',
-            photoURL: firebaseUser.photoURL || undefined,
-            role: 'cliente', // Default role - could be stored in Firebase or database
-            addresses: [],
-            createdAt: firebaseUser.metadata?.creationTime || new Date().toISOString()
-          };
-          
-          // Load user data from localStorage if exists (for addresses, etc.)
-          const storedUserData = localStorage.getItem(`user_${firebaseUser.uid}`);
-          if (storedUserData) {
-            const parsed = JSON.parse(storedUserData);
-            userData.addresses = parsed.addresses || [];
-            userData.role = parsed.role || 'cliente';
-          }
-          
-          setUser(userData);
+        // Intentar obtener el perfil usando la cookie de sesión existente
+        const profileRes = await apiClient.get<User>('/api/auth/profile');
+
+        if (profileRes.ok && profileRes.data) {
+          setUser(profileRes.data);
         } else {
-          // User is logged out
-          setUser(null);
+          // La cookie expiró o no existe (ej. primer inicio tras cambiar dispositivo).
+          // Refrescamos el idToken y re-establecemos la sesión en el backend.
+          const idToken = await fbUser.getIdToken(true);
+          const sessionRes = await apiClient.post<User>('/api/auth/session', { idToken });
+
+          if (sessionRes.ok && sessionRes.data) {
+            setUser(sessionRes.data);
+          } else {
+            // No se pudo re-establecer la sesión → forzar logout
+            await signOut(auth);
+            setUser(null);
+          }
         }
-      } catch (error) {
-        console.error('Error setting user:', error);
+      } catch {
         setUser(null);
       } finally {
         setLoading(false);
@@ -72,13 +75,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       setAuthError(null);
       setLoading(true);
-      
+
       const result = await signInWithEmailAndPassword(auth, email, password);
-      
-      // User data will be set by onAuthStateChanged listener
-      console.log('Login successful:', result.user.email);
-    } catch (error: any) {
-      const errorMessage = getAuthErrorMessage(error.code);
+
+      // Obtener idToken y crear la session cookie httpOnly en el backend
+      const idToken = await result.user.getIdToken();
+      const res = await apiClient.post<User>('/api/auth/session', { idToken });
+
+      if (!res.ok || !res.data) {
+        await signOut(auth);
+        throw new Error(res.message ?? 'Error al crear sesión en el servidor');
+      }
+
+      setUser(res.data);
+    } catch (error: unknown) {
+      const code = (error as { code?: string }).code;
+      const errorMessage = code ? getAuthErrorMessage(code) : String(error instanceof Error ? error.message : 'Error al iniciar sesión');
       setAuthError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -90,31 +102,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       setAuthError(null);
       setLoading(true);
-      
-      // Create user with email and password
+
       const result = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Update profile with display name
-      await updateProfile(result.user, {
-        displayName: name
-      });
-      
-      // Initialize user data in localStorage
-      const userData: User = {
-        id: result.user.uid,
-        email: result.user.email || '',
-        name: name,
-        role: 'cliente',
-        addresses: [],
-        createdAt: new Date().toISOString()
-      };
-      
-      localStorage.setItem(`user_${result.user.uid}`, JSON.stringify(userData));
-      
-      console.log('Registration successful:', result.user.email);
-      // User data will be set by onAuthStateChanged listener
-    } catch (error: any) {
-      const errorMessage = getAuthErrorMessage(error.code);
+
+      // Actualizar nombre en Firebase Auth (para displayName)
+      await updateProfile(result.user, { displayName: name });
+
+      // Crear session cookie y perfil en Firestore
+      const idToken = await result.user.getIdToken();
+      const res = await apiClient.post<User>('/api/auth/session', { idToken });
+
+      if (!res.ok || !res.data) {
+        await signOut(auth);
+        throw new Error(res.message ?? 'Error al crear sesión en el servidor');
+      }
+
+      setUser(res.data);
+    } catch (error: unknown) {
+      const code = (error as { code?: string }).code;
+      const errorMessage = code ? getAuthErrorMessage(code) : String(error instanceof Error ? error.message : 'Error al registrarse');
       setAuthError(errorMessage);
       throw new Error(errorMessage);
     } finally {
@@ -126,10 +132,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
       setAuthError(null);
       setLoading(true);
-      await signOut(auth);
+      // Cerrar sesión en Firebase Auth y borrar la session cookie en el backend
+      await Promise.all([
+        signOut(auth),
+        apiClient.delete('/api/auth/session'),
+      ]);
       setUser(null);
-      console.log('Logout successful');
-    } catch (error: any) {
+    } catch {
       const errorMessage = 'Error al cerrar sesión';
       setAuthError(errorMessage);
       throw new Error(errorMessage);
@@ -143,9 +152,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateUser = (updatedUser: User) => {
+    // Actualiza el estado local. Para persistir en Firestore, llama a PUT /api/auth/profile.
     setUser(updatedUser);
-    // Store additional user data in localStorage (Firebase only stores basic profile)
-    localStorage.setItem(`user_${updatedUser.id}`, JSON.stringify(updatedUser));
   };
 
   return (
