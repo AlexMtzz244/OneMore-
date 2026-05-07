@@ -23,6 +23,19 @@ export default defineConfig(({ mode }) => {
       'import.meta.env.VITE_ADMIN_EMAILS': JSON.stringify(env.VITE_ADMIN_EMAILS || ''),
     },
 
+  // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
+  assetsInclude: ['**/*.svg', '**/*.csv'],
+
+  server: {
+    // Proxy de desarrollo: reenvía /api al backend Next.js en el mismo origen,
+    // resolviendo el problema de cookies cross-origin sin necesitar CORS ni HTTPS.
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3002',
+        changeOrigin: true,
+      },
+    },
+  },
     // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
     assetsInclude: ['**/*.svg', '**/*.csv'],
   }
