@@ -52,7 +52,7 @@ import {
   Menu,
   X,
 } from 'lucide-react';
-import { Product, ProductCategory, ProductGoal, Order, OrderStatus, User as UserType, ActivityLog } from '../types';
+import { Product, ProductCategory, ProductGoal, Order, OrderStatus, User as UserType, ActivityLog, UserRole } from '../types';
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -142,8 +142,8 @@ export const AdminDashboard: React.FC = () => {
 
     const nextUsers = allUsers.map((u) => {
       if (normalizeEmail(u.email) !== normalized) return u;
-      const nextRole = makeAdmin ? 'administrador' : 'cliente';
-      const nextUser = { ...u, role: nextRole };
+      const nextRole: UserRole = makeAdmin ? 'administrador' : 'cliente';
+      const nextUser: UserType = { ...u, role: nextRole };
       localStorage.setItem(`user_${u.id}`, JSON.stringify(nextUser));
       if (user && u.id === user.id) {
         updateUser(nextUser);

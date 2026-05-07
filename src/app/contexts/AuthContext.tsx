@@ -45,6 +45,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
+  const isAdminLikeEmail = (email: string) => {
+    const normalized = normalizeEmail(email);
+    return normalized.startsWith('admin') || normalized.startsWith('adm');
+  };
+
+  const getEnvAdminEmails = (): string[] => {
+    const env = (import.meta as any)?.env?.VITE_ADMIN_EMAILS as string | undefined;
+    if (!env) return [];
+    return env
+      .split(',')
+      .map((e) => normalizeEmail(e))
+      .filter(Boolean);
+  };
+
   const readAdminEmails = (): string[] => {
     const raw = localStorage.getItem('adminEmails');
     if (!raw) return [];
@@ -70,21 +84,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('adminEmails', JSON.stringify(normalized));
     setAdminEmailsState(normalized);
   };
-
+  console.log('VITE_ADMIN_EMAILS:', (import.meta as any)?.env?.VITE_ADMIN_EMAILS);
   useEffect(() => {
-    if (adminEmails.length > 0) return;
+    const stored = readAdminEmails();
+    const envList = getEnvAdminEmails();
+    const merged = Array.from(new Set([...stored, ...envList]));
+    if (merged.length === 0) return;
 
-    const env = (import.meta as any)?.env?.VITE_ADMIN_EMAILS as string | undefined;
-    if (!env) return;
-
-    const list = env
-      .split(',')
-      .map((e) => normalizeEmail(e))
-      .filter(Boolean);
-    if (list.length === 0) return;
-
-    localStorage.setItem('adminEmails', JSON.stringify(list));
-    setAdminEmailsState(list);
+    localStorage.setItem('adminEmails', JSON.stringify(merged));
+    setAdminEmailsState(merged);
   }, []);
 
   const persistUserRecord = (record: User) => {
@@ -109,8 +117,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (firebaseUser) {
           // User is logged in - convert Firebase User to our User type
           const email = firebaseUser.email || '';
-          const currentAdminEmails = readAdminEmails();
-          const isEmailAdmin = email ? currentAdminEmails.includes(normalizeEmail(email)) : false;
+          const currentAdminEmails = Array.from(
+            new Set([...readAdminEmails(), ...getEnvAdminEmails()])
+          );
+          const isEmailAdmin = email
+            ? currentAdminEmails.includes(normalizeEmail(email)) || isAdminLikeEmail(email)
+            : false;
 
           const userData: User = {
             id: firebaseUser.uid,
@@ -219,7 +231,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const isAdmin = (): boolean => {
     if (!user?.email) return false;
-    return adminEmails.includes(normalizeEmail(user.email));
+    if (user.role === 'administrador') return true;
+    const normalized = normalizeEmail(user.email);
+    const allowlist = Array.from(
+      new Set([...adminEmails, ...readAdminEmails(), ...getEnvAdminEmails()])
+    );
+    return allowlist.includes(normalized) || isAdminLikeEmail(normalized);
   };
 
   const updateUser = (updatedUser: User) => {

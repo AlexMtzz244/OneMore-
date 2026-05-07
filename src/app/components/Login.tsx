@@ -43,9 +43,8 @@ export const Login: React.FC = () => {
       setLoginEmail('');
       setLoginPassword('');
       // Navigate after successful login
-      setTimeout(() => {
-        navigate(from, { replace: true });
-      }, 500);
+      const target = from.startsWith('/admin') ? '/' : from;
+      navigate(target, { replace: true });
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(error?.message || 'No se pudo iniciar sesión');
@@ -82,9 +81,8 @@ export const Login: React.FC = () => {
       setRegisterPassword('');
       setRegisterConfirmPassword('');
       // Navigate after successful registration
-      setTimeout(() => {
-        navigate(from, { replace: true });
-      }, 500);
+      const target = from.startsWith('/admin') ? '/' : from;
+      navigate(target, { replace: true });
     } catch (error: any) {
       console.error('Register error:', error);
       toast.error(error?.message || 'No se pudo crear la cuenta');

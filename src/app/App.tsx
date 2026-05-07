@@ -17,6 +17,7 @@ import { ProductDetail } from './components/ProductDetail';
 import { Cart } from './components/Cart';
 import { Checkout } from './components/Checkout';
 import { Login } from './components/Login';
+import { AdminLogin } from './components/AdminLogin';
 import { UserProfile } from './components/UserProfile';
 import { OrderHistory } from './components/OrderHistory';
 import { OrderConfirmation } from './components/OrderConfirmation';
@@ -40,7 +41,7 @@ const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAdmin } = useAuth();
   
   if (!user || !isAdmin()) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/admin/login" replace />;
   }
   
   return <>{children}</>;
@@ -66,6 +67,7 @@ const AppContent: React.FC = () => {
             <Route path="/producto/:id" element={<PageTransition><ProductDetail /></PageTransition>} />
             <Route path="/carrito" element={<PageTransition><Cart /></PageTransition>} />
             <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+            <Route path="/admin/login" element={<PageTransition><AdminLogin /></PageTransition>} />
             <Route path="/buscar" element={<PageTransition><SearchPage /></PageTransition>} />
 
             {/* Rutas protegidas (requieren autenticación) */}
