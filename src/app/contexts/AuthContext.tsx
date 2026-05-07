@@ -19,8 +19,6 @@ interface AuthContextType {
   isAdmin: () => boolean;
   updateUser: (updatedUser: User) => void;
   authError: string | null;
-  adminEmails: string[];
-  setAdminEmails: (emails: string[]) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,70 +27,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState<string | null>(null);
-  const [adminEmails, setAdminEmailsState] = useState<string[]>(() => {
-    try {
-      const raw = localStorage.getItem('adminEmails');
-      if (!raw) return [];
-      const parsed = JSON.parse(raw) as unknown;
-      if (!Array.isArray(parsed)) return [];
-      return parsed
-        .map((e) => (typeof e === 'string' ? e.trim().toLowerCase() : ''))
-        .filter(Boolean);
-    } catch {
-      return [];
-    }
-  });
-
-  const normalizeEmail = (email: string) => email.trim().toLowerCase();
-
-  const isAdminLikeEmail = (email: string) => {
-    const normalized = normalizeEmail(email);
-    return normalized.startsWith('admin') || normalized.startsWith('adm');
-  };
-
-  const getEnvAdminEmails = (): string[] => {
-    const env = (import.meta as any)?.env?.VITE_ADMIN_EMAILS as string | undefined;
-    if (!env) return [];
-    return env
-      .split(',')
-      .map((e) => normalizeEmail(e))
-      .filter(Boolean);
-  };
-
-  const readAdminEmails = (): string[] => {
-    const raw = localStorage.getItem('adminEmails');
-    if (!raw) return [];
-    try {
-      const parsed = JSON.parse(raw) as unknown;
-      if (!Array.isArray(parsed)) return [];
-      return parsed
-        .map((e) => (typeof e === 'string' ? normalizeEmail(e) : ''))
-        .filter(Boolean);
-    } catch {
-      return [];
-    }
-  };
-
-  const setAdminEmails = (emails: string[]) => {
-    const normalized = Array.from(
-      new Set(
-        emails
-          .map((e) => (typeof e === 'string' ? normalizeEmail(e) : ''))
-          .filter(Boolean)
-      )
-    );
-    localStorage.setItem('adminEmails', JSON.stringify(normalized));
-    setAdminEmailsState(normalized);
-  };
-  useEffect(() => {
-    const stored = readAdminEmails();
-    const envList = getEnvAdminEmails();
-    const merged = Array.from(new Set([...stored, ...envList]));
-    if (merged.length === 0) return;
-
-    localStorage.setItem('adminEmails', JSON.stringify(merged));
-    setAdminEmailsState(merged);
-  }, []);
 
   // ─────────────────────────────────────────────────────────────
   // Escucha cambios de auth en Firebase (se dispara en cada recarga de página).
@@ -124,19 +58,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         // Fallback local si el backend no responde
         const email = firebaseUser.email || '';
-        const currentAdminEmails = Array.from(
-          new Set([...readAdminEmails(), ...getEnvAdminEmails()])
-        );
-        const isEmailAdmin = email
-          ? currentAdminEmails.includes(normalizeEmail(email)) || isAdminLikeEmail(email)
-          : false;
 
         const userData: User = {
           id: firebaseUser.uid,
           email,
           name: firebaseUser.displayName || 'Usuario',
           photoURL: firebaseUser.photoURL || undefined,
-          role: isEmailAdmin ? 'administrador' : 'cliente',
+          role: 'cliente',
           addresses: [],
           createdAt: firebaseUser.metadata?.creationTime || new Date().toISOString(),
         };
@@ -229,13 +157,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const isAdmin = (): boolean => {
-    if (!user?.email) return false;
-    if (user.role === 'administrador') return true;
-    const normalized = normalizeEmail(user.email);
-    const allowlist = Array.from(
-      new Set([...adminEmails, ...readAdminEmails(), ...getEnvAdminEmails()])
-    );
-    return allowlist.includes(normalized) || isAdminLikeEmail(normalized);
+    return user?.role === 'administrador';
   };
 
   const updateUser = (updatedUser: User) => {
@@ -253,9 +175,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         register, 
         isAdmin, 
         updateUser,
-        authError,
-        adminEmails,
-        setAdminEmails
+        authError
       }}
     >
       {children}

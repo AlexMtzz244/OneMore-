@@ -1,5 +1,7 @@
 {
-  "/api/admin/products/route": "app/api/admin/products/route.js",
-  "/api/auth/profile/route": "app/api/auth/profile/route.js",
-  "/api/admin/orders/route": "app/api/admin/orders/route.js"
+  "/api/auth/session/route": "app/api/auth/session/route.js",
+  "/api/orders/route": "app/api/orders/route.js",
+  "/api/admin/orders/route": "app/api/admin/orders/route.js",
+  "/api/admin/users/route": "app/api/admin/users/route.js",
+  "/api/admin/users/[uid]/route": "app/api/admin/users/[uid]/route.js"
 }

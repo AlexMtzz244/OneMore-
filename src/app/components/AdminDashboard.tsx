@@ -57,7 +57,7 @@ import { Product, ProductCategory, ProductGoal, Order, OrderStatus, User as User
 
 export const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { user, isAdmin, adminEmails, setAdminEmails, updateUser } = useAuth();
+  const { user, isAdmin, updateUser } = useAuth();
   const { products, addProduct, updateProduct, deleteProduct, getAllOrders, updateOrder } = useProducts();
   const { formatPrice } = useCurrency();
   const { theme, toggleTheme } = useTheme();
@@ -71,7 +71,6 @@ export const AdminDashboard: React.FC = () => {
   const [stockFilter, setStockFilter] = useState<'all' | 'low' | 'out'>('all');
   const [notificationsPanelOpen, setNotificationsPanelOpen] = useState(false);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
-  const [newAdminEmail, setNewAdminEmail] = useState('');
   const [allUsers, setAllUsers] = useState<UserType[]>([]);
 
   // Form state for product CRUD
@@ -137,15 +136,10 @@ export const AdminDashboard: React.FC = () => {
 
   const normalizeEmail = (email: string) => email.trim().toLowerCase();
 
-  const isEmailAdmin = (email: string) => adminEmails.includes(normalizeEmail(email));
+  const isUserAdmin = (target: UserType) => target.role === 'administrador';
 
   const toggleAdminForEmail = async (email: string, makeAdmin: boolean) => {
     const normalized = normalizeEmail(email);
-    const nextAdminEmails = makeAdmin
-      ? Array.from(new Set([...adminEmails, normalized]))
-      : adminEmails.filter((e) => e !== normalized);
-    setAdminEmails(nextAdminEmails);
-
     const targetUser = allUsers.find((u) => normalizeEmail(u.email) === normalized);
     if (!targetUser) {
       toast.error('Usuario no encontrado en la BD');
@@ -177,30 +171,6 @@ export const AdminDashboard: React.FC = () => {
     });
   };
 
-  const handleAddAdminEmail = () => {
-    const normalized = normalizeEmail(newAdminEmail);
-    if (!normalized || !normalized.includes('@')) {
-      toast.error('Ingresa un email válido');
-      return;
-    }
-
-    if (adminEmails.includes(normalized)) {
-      toast.message('Ese email ya es admin');
-      return;
-    }
-
-    setAdminEmails([...adminEmails, normalized]);
-    setNewAdminEmail('');
-
-    appendActivityLog({
-      id: `log_${Date.now()}`,
-      userId: user?.id || 'admin',
-      userName: user?.name || 'Admin',
-      action: 'Agregó email admin',
-      target: normalized,
-      timestamp: new Date().toISOString(),
-    });
-  };
 
   // Calculate KPIs
   const thirtyDaysAgo = new Date();
@@ -1214,55 +1184,10 @@ Método de pago: ${order.paymentMethod}
                   <CardHeader>
                     <CardTitle>Gestión de Usuarios</CardTitle>
                     <CardDescription>
-                      Define qué correos pueden acceder al panel y revisa usuarios registrados
+                      Administra los roles desde Firestore y revisa usuarios registrados
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4 mb-6">
-                      <div>
-                        <Label htmlFor="new-admin-email">Agregar correo administrador</Label>
-                        <div className="flex gap-2 mt-2">
-                          <Input
-                            id="new-admin-email"
-                            value={newAdminEmail}
-                            onChange={(e) => setNewAdminEmail(e.target.value)}
-                            placeholder="admin@tudominio.com"
-                          />
-                          <Button type="button" onClick={handleAddAdminEmail}>
-                            Agregar
-                          </Button>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Solo los emails en esta lista pueden entrar a /admin.
-                        </p>
-                      </div>
-
-                      <div className="rounded-lg border p-4">
-                        <p className="text-sm font-medium mb-3">Correos administradores</p>
-                        {adminEmails.length === 0 ? (
-                          <p className="text-sm text-muted-foreground">
-                            Aún no hay correos admin configurados.
-                          </p>
-                        ) : (
-                          <div className="flex flex-wrap gap-2">
-                            {adminEmails.map((email) => (
-                              <Badge key={email} variant="secondary" className="gap-2">
-                                {email}
-                                <button
-                                  type="button"
-                                  className="ml-1"
-                                  onClick={() => void toggleAdminForEmail(email, false)}
-                                  aria-label={`Quitar admin a ${email}`}
-                                >
-                                  ×
-                                </button>
-                              </Badge>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
                     <div className="rounded-lg border overflow-hidden">
                       <Table>
                         <TableHeader>
@@ -1283,10 +1208,10 @@ Método de pago: ${order.paymentMethod}
                               <TableCell>
                                 <Badge
                                   variant={
-                                    isEmailAdmin(u.email) ? 'default' : 'secondary'
+                                    isUserAdmin(u) ? 'default' : 'secondary'
                                   }
                                 >
-                                  {isEmailAdmin(u.email) ? 'Admin' : 'Cliente'}
+                                  {isUserAdmin(u) ? 'Admin' : 'Cliente'}
                                 </Badge>
                               </TableCell>
                               <TableCell>
@@ -1294,7 +1219,7 @@ Método de pago: ${order.paymentMethod}
                               </TableCell>
                               <TableCell>{u.addresses.length}</TableCell>
                               <TableCell className="text-right">
-                                {isEmailAdmin(u.email) ? (
+                                {isUserAdmin(u) ? (
                                   <Button
                                     size="sm"
                                     variant="outline"
