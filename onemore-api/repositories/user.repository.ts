@@ -94,3 +94,14 @@ export async function updateUser(
   const updated = await ref.get()
   return docToUser(updated.data() as UserDoc)
 }
+
+/** Lista todos los usuarios desde Firestore. */
+export async function listUsers(): Promise<User[]> {
+  const db = getAdminFirestore()
+  const snapshot = await db.collection(COLLECTION).get()
+  const users = snapshot.docs.map((doc) => docToUser(doc.data() as UserDoc))
+
+  return users.sort((a, b) =>
+    new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+  )
+}

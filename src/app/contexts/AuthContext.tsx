@@ -84,7 +84,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.setItem('adminEmails', JSON.stringify(normalized));
     setAdminEmailsState(normalized);
   };
-  console.log('VITE_ADMIN_EMAILS:', (import.meta as any)?.env?.VITE_ADMIN_EMAILS);
   useEffect(() => {
     const stored = readAdminEmails();
     const envList = getEnvAdminEmails();
@@ -95,86 +94,54 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setAdminEmailsState(merged);
   }, []);
 
-  const persistUserRecord = (record: User) => {
-    const stored = localStorage.getItem('users');
-    const users: User[] = stored ? JSON.parse(stored) : [];
-    const index = users.findIndex((u) => u.id === record.id);
-    const nextUsers = [...users];
-
-    if (index >= 0) {
-      nextUsers[index] = { ...nextUsers[index], ...record };
-    } else {
-      nextUsers.push(record);
-    }
-
-    localStorage.setItem('users', JSON.stringify(nextUsers));
-  };
-
   // ─────────────────────────────────────────────────────────────
   // Escucha cambios de auth en Firebase (se dispara en cada recarga de página).
   // Si Firebase tiene un usuario activo, intenta restaurar la sesión desde
   // la session cookie httpOnly a través del backend Next.js.
   // ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      if (!fbUser) {
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        // Intentar obtener el perfil usando la cookie de sesión existente
-        const profileRes = await apiClient.get<User>('/api/auth/profile');
-
-        if (profileRes.ok && profileRes.data) {
-          setUser(profileRes.data);
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       try {
-        if (firebaseUser) {
-          // User is logged in - convert Firebase User to our User type
-          const email = firebaseUser.email || '';
-          const currentAdminEmails = Array.from(
-            new Set([...readAdminEmails(), ...getEnvAdminEmails()])
-          );
-          const isEmailAdmin = email
-            ? currentAdminEmails.includes(normalizeEmail(email)) || isAdminLikeEmail(email)
-            : false;
-
-          const userData: User = {
-            id: firebaseUser.uid,
-            email,
-            name: firebaseUser.displayName || 'Usuario',
-            photoURL: firebaseUser.photoURL || undefined,
-            role: isEmailAdmin ? 'administrador' : 'cliente',
-            addresses: [],
-            createdAt: firebaseUser.metadata?.creationTime || new Date().toISOString()
-          };
-          
-          // Load user data from localStorage if exists (for addresses, etc.)
-          const storedUserData = localStorage.getItem(`user_${firebaseUser.uid}`);
-          if (storedUserData) {
-            const parsed = JSON.parse(storedUserData);
-            userData.addresses = parsed.addresses || [];
-            // If the email is on the admin allowlist, force admin role.
-            userData.role = isEmailAdmin ? 'administrador' : (parsed.role || 'cliente');
-          }
-          persistUserRecord(userData);
-          setUser(userData);
-        } else {
-          // La cookie expiró o no existe (ej. primer inicio tras cambiar dispositivo).
-          // Refrescamos el idToken y re-establecemos la sesión en el backend.
-          const idToken = await fbUser.getIdToken(true);
-          const sessionRes = await apiClient.post<User>('/api/auth/session', { idToken });
-
-          if (sessionRes.ok && sessionRes.data) {
-            setUser(sessionRes.data);
-          } else {
-            // No se pudo re-establecer la sesión → forzar logout
-            await signOut(auth);
-            setUser(null);
-          }
+        if (!firebaseUser) {
+          setUser(null);
+          return;
         }
+
+        // Intentar obtener el perfil usando la cookie de sesión existente
+        const profileRes = await apiClient.get<User>('/api/auth/profile');
+        if (profileRes.ok && profileRes.data) {
+          setUser(profileRes.data);
+          return;
+        }
+
+        // Si no hay cookie válida, crear una nueva sesión con el idToken
+        const idToken = await firebaseUser.getIdToken(true);
+        const sessionRes = await apiClient.post<User>('/api/auth/session', { idToken });
+        if (sessionRes.ok && sessionRes.data) {
+          setUser(sessionRes.data);
+          return;
+        }
+
+        // Fallback local si el backend no responde
+        const email = firebaseUser.email || '';
+        const currentAdminEmails = Array.from(
+          new Set([...readAdminEmails(), ...getEnvAdminEmails()])
+        );
+        const isEmailAdmin = email
+          ? currentAdminEmails.includes(normalizeEmail(email)) || isAdminLikeEmail(email)
+          : false;
+
+        const userData: User = {
+          id: firebaseUser.uid,
+          email,
+          name: firebaseUser.displayName || 'Usuario',
+          photoURL: firebaseUser.photoURL || undefined,
+          role: isEmailAdmin ? 'administrador' : 'cliente',
+          addresses: [],
+          createdAt: firebaseUser.metadata?.creationTime || new Date().toISOString(),
+        };
+
+        setUser(userData);
       } catch {
         setUser(null);
       } finally {
@@ -274,9 +241,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const updateUser = (updatedUser: User) => {
     // Actualiza el estado local. Para persistir en Firestore, llama a PUT /api/auth/profile.
     setUser(updatedUser);
-    // Store additional user data in localStorage (Firebase only stores basic profile)
-    localStorage.setItem(`user_${updatedUser.id}`, JSON.stringify(updatedUser));
-    persistUserRecord(updatedUser);
   };
 
   return (

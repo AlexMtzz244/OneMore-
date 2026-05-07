@@ -5,6 +5,7 @@ import { useProducts } from '../contexts/ProductContext';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNotifications } from '../contexts/NotificationContext';
+import { apiClient } from '../../lib/api-client';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Input } from './ui/input';
@@ -112,9 +113,19 @@ export const AdminDashboard: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const storedUsers = localStorage.getItem('users');
-    setAllUsers(storedUsers ? JSON.parse(storedUsers) : []);
-  }, []);
+    if (!user || !isAdmin()) return;
+
+    const loadUsers = async () => {
+      const res = await apiClient.get<UserType[]>('/api/admin/users');
+      if (res.ok && res.data) {
+        setAllUsers(res.data);
+      } else {
+        toast.error(res.message ?? 'No se pudo cargar la lista de usuarios');
+      }
+    };
+
+    loadUsers();
+  }, [user, isAdmin]);
 
   if (!user || !isAdmin()) {
     return null;
@@ -128,29 +139,33 @@ export const AdminDashboard: React.FC = () => {
 
   const isEmailAdmin = (email: string) => adminEmails.includes(normalizeEmail(email));
 
-  const persistUsers = (users: UserType[]) => {
-    localStorage.setItem('users', JSON.stringify(users));
-    setAllUsers(users);
-  };
-
-  const toggleAdminForEmail = (email: string, makeAdmin: boolean) => {
+  const toggleAdminForEmail = async (email: string, makeAdmin: boolean) => {
     const normalized = normalizeEmail(email);
     const nextAdminEmails = makeAdmin
       ? Array.from(new Set([...adminEmails, normalized]))
       : adminEmails.filter((e) => e !== normalized);
     setAdminEmails(nextAdminEmails);
 
-    const nextUsers = allUsers.map((u) => {
-      if (normalizeEmail(u.email) !== normalized) return u;
-      const nextRole: UserRole = makeAdmin ? 'administrador' : 'cliente';
-      const nextUser: UserType = { ...u, role: nextRole };
-      localStorage.setItem(`user_${u.id}`, JSON.stringify(nextUser));
-      if (user && u.id === user.id) {
-        updateUser(nextUser);
-      }
-      return nextUser;
+    const targetUser = allUsers.find((u) => normalizeEmail(u.email) === normalized);
+    if (!targetUser) {
+      toast.error('Usuario no encontrado en la BD');
+      return;
+    }
+
+    const nextRole: UserRole = makeAdmin ? 'administrador' : 'cliente';
+    const res = await apiClient.put<UserType>(`/api/admin/users/${targetUser.id}`, {
+      role: nextRole,
     });
-    persistUsers(nextUsers);
+
+    if (res.ok && res.data) {
+      setAllUsers((prev) => prev.map((u) => (u.id === res.data!.id ? res.data! : u)));
+      if (user && res.data.id === user.id) {
+        updateUser(res.data);
+      }
+    } else {
+      toast.error(res.message ?? 'No se pudo actualizar el rol del usuario');
+      return;
+    }
 
     appendActivityLog({
       id: `log_${Date.now()}`,
@@ -1236,7 +1251,7 @@ Método de pago: ${order.paymentMethod}
                                 <button
                                   type="button"
                                   className="ml-1"
-                                  onClick={() => toggleAdminForEmail(email, false)}
+                                  onClick={() => void toggleAdminForEmail(email, false)}
                                   aria-label={`Quitar admin a ${email}`}
                                 >
                                   ×
@@ -1283,14 +1298,14 @@ Método de pago: ${order.paymentMethod}
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    onClick={() => toggleAdminForEmail(u.email, false)}
+                                    onClick={() => void toggleAdminForEmail(u.email, false)}
                                   >
                                     Quitar admin
                                   </Button>
                                 ) : (
                                   <Button
                                     size="sm"
-                                    onClick={() => toggleAdminForEmail(u.email, true)}
+                                    onClick={() => void toggleAdminForEmail(u.email, true)}
                                   >
                                     Hacer admin
                                   </Button>

@@ -1,4 +1,4 @@
-// File: C:\Users\diego\Desktop\Materias Octavo Semestre\Progra web\onemore\OneMore-\onemore-api\app\api\products\route.ts
+// File: C:\Users\Alyed\Documentos\GitHub\OneMore-\onemore-api\app\api\products\route.ts
 import * as entry from '../../../../../app/api/products/route.js'
 import type { NextRequest } from 'next/server.js'
 

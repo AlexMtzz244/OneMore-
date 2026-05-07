@@ -1,9 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Product, Review, Order } from '../types';
-import { mockReviews } from '../data/mockData';
 import { apiClient } from '../../lib/api-client';
 import { useAuth } from './AuthContext';
-import { catalogProducts, initialReviews, initialOrders } from '../data/mockData';
 
 interface ProductContextType {
   products: Product[];
@@ -53,14 +51,6 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     };
 
     loadProducts();
-    // Cargar desde localStorage o usar datos iniciales
-    const storedProducts = localStorage.getItem('products');
-    const storedReviews = localStorage.getItem('reviews');
-    const storedOrders = localStorage.getItem('orders');
-
-    setProducts(storedProducts ? JSON.parse(storedProducts) : catalogProducts);
-    setReviews(storedReviews ? JSON.parse(storedReviews) : initialReviews);
-    setOrders(storedOrders ? JSON.parse(storedOrders) : initialOrders);
   }, []);
 
   // ─────────────────────────────────────────────────────────────
@@ -84,15 +74,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     loadOrders();
   }, [user]);
 
-  // Reviews se mantienen en localStorage hasta que se implemente el endpoint.
-  useEffect(() => {
-    const stored = localStorage.getItem('reviews');
-    setReviews(stored ? JSON.parse(stored) : mockReviews);
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('reviews', JSON.stringify(reviews));
-  }, [reviews]);
+  // Reviews se mantienen en memoria hasta tener endpoint.
 
   // ── Mutaciones de productos (sólo admin) ──────────────────────
 
