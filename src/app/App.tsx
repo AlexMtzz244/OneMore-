@@ -18,6 +18,7 @@ import { Cart } from './components/Cart';
 import { Checkout } from './components/Checkout';
 import { Login } from './components/Login';
 import { AdminLogin } from './components/AdminLogin';
+import { ResetPassword } from './components/ResetPassword';
 import { UserProfile } from './components/UserProfile';
 import { OrderHistory } from './components/OrderHistory';
 import { OrderConfirmation } from './components/OrderConfirmation';
@@ -67,6 +68,7 @@ const AppContent: React.FC = () => {
             <Route path="/producto/:id" element={<PageTransition><ProductDetail /></PageTransition>} />
             <Route path="/carrito" element={<PageTransition><Cart /></PageTransition>} />
             <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+            <Route path="/reset-password" element={<PageTransition><ResetPassword /></PageTransition>} />
             <Route path="/admin/login" element={<PageTransition><AdminLogin /></PageTransition>} />
             <Route path="/buscar" element={<PageTransition><SearchPage /></PageTransition>} />
 

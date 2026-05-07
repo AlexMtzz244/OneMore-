@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../../lib/firebase';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -17,6 +19,9 @@ export const Login: React.FC = () => {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [showReset, setShowReset] = useState(false);
 
   // Estado para Registro
   const [registerName, setRegisterName] = useState('');
@@ -26,6 +31,33 @@ export const Login: React.FC = () => {
   const [registerLoading, setRegisterLoading] = useState(false);
 
   const from = (location.state as any)?.from?.pathname || '/';
+
+  const getFirebaseErrorMessage = (error: unknown, fallback: string) => {
+    const code = (error as { code?: string })?.code ?? '';
+    switch (code) {
+      case 'auth/invalid-email':
+        return 'El email no es valido';
+      case 'auth/user-disabled':
+        return 'Este usuario fue deshabilitado';
+      case 'auth/user-not-found':
+        return 'No existe un usuario con este correo';
+      case 'auth/wrong-password':
+      case 'auth/invalid-credential':
+        return 'Correo o contrasena incorrectos';
+      case 'auth/too-many-requests':
+        return 'Demasiados intentos. Intenta mas tarde';
+      case 'auth/email-already-in-use':
+        return 'Este correo ya esta registrado';
+      case 'auth/weak-password':
+        return 'La contrasena es demasiado debil';
+      case 'auth/missing-email':
+        return 'Ingresa un correo valido';
+      case 'auth/network-request-failed':
+        return 'Error de red. Intenta de nuevo';
+      default:
+        return fallback;
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +79,7 @@ export const Login: React.FC = () => {
       navigate(target, { replace: true });
     } catch (error: any) {
       console.error('Login error:', error);
-      toast.error(error?.message || 'No se pudo iniciar sesión');
+      toast.error(getFirebaseErrorMessage(error, 'No se pudo iniciar sesion'));
     } finally {
       setLoginLoading(false);
     }
@@ -85,9 +117,42 @@ export const Login: React.FC = () => {
       navigate(target, { replace: true });
     } catch (error: any) {
       console.error('Register error:', error);
-      toast.error(error?.message || 'No se pudo crear la cuenta');
+      toast.error(getFirebaseErrorMessage(error, 'No se pudo crear la cuenta'));
     } finally {
       setRegisterLoading(false);
+    }
+  };
+
+  const toggleReset = () => {
+    setShowReset((prev) => {
+      const next = !prev;
+      if (next && !resetEmail && loginEmail) {
+        setResetEmail(loginEmail);
+      }
+      return next;
+    });
+  };
+
+  const handleResetPassword = async () => {
+    if (!resetEmail) {
+      toast.error('Ingresa tu email para recuperar la contrasena');
+      return;
+    }
+
+    try {
+      setResetLoading(true);
+      const actionCodeSettings = {
+        url: `${window.location.origin}/reset-password`,
+        handleCodeInApp: true,
+      };
+      await sendPasswordResetEmail(auth, resetEmail, actionCodeSettings);
+      toast.success('Te enviamos un enlace para restablecer tu contrasena');
+      setShowReset(false);
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      toast.error(getFirebaseErrorMessage(error, 'No se pudo enviar el correo de recuperacion'));
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -143,7 +208,38 @@ export const Login: React.FC = () => {
                     >
                       {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
                     </Button>
-
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="w-full text-sm"
+                      disabled={isLoading}
+                      onClick={toggleReset}
+                    >
+                      {showReset ? 'Cancelar recuperacion' : 'Olvide mi contrasena'}
+                    </Button>
+                    {showReset && (
+                      <div className="space-y-3 rounded-md border p-3">
+                        <div>
+                          <Label htmlFor="reset-email">Email registrado</Label>
+                          <Input
+                            id="reset-email"
+                            type="email"
+                            placeholder="tu@email.com"
+                            value={resetEmail}
+                            onChange={(e) => setResetEmail(e.target.value)}
+                            disabled={isLoading || resetLoading}
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          className="w-full"
+                          onClick={handleResetPassword}
+                          disabled={isLoading || resetLoading}
+                        >
+                          {resetLoading ? 'Enviando enlace...' : 'Enviar enlace'}
+                        </Button>
+                      </div>
+                    )}
                   </form>
                 </TabsContent>
 
