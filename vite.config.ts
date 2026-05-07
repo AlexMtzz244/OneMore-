@@ -25,7 +25,7 @@ export default defineConfig({
     // resolviendo el problema de cookies cross-origin sin necesitar CORS ni HTTPS.
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'http://localhost:3002',
         changeOrigin: true,
       },
     },
