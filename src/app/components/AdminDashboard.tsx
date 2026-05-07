@@ -312,6 +312,7 @@ export const AdminDashboard: React.FC = () => {
       reviewCount: editingProduct?.reviewCount || 0,
       nutritionalInfo: formData.nutritionalInfo!,
       createdAt: editingProduct?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
     if (editingProduct) {
