@@ -29,6 +29,10 @@ function docToProduct(id: string, data: FirebaseFirestore.DocumentData): Product
       data.createdAt instanceof Timestamp
         ? data.createdAt.toDate().toISOString()
         : (data.createdAt as string ?? new Date().toISOString()),
+    updatedAt:
+      data.updatedAt instanceof Timestamp
+        ? data.updatedAt.toDate().toISOString()
+        : (data.updatedAt as string ?? new Date().toISOString()),
   }
 }
 
@@ -91,7 +95,7 @@ export async function updateProduct(
 
   if (!snap.exists) return null
 
-  await ref.update(data as FirebaseFirestore.UpdateData)
+  await ref.update({ ...data, updatedAt: Timestamp.now() } as FirebaseFirestore.UpdateData)
   const updated = await ref.get()
   return docToProduct(updated.id, updated.data()!)
 }
