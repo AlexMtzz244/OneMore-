@@ -13,10 +13,11 @@ import { Star, SlidersHorizontal } from 'lucide-react';
 import { ProductCategory, ProductGoal } from '../types';
 
 export const ProductCatalog: React.FC = () => {
-  const { products } = useProducts();
+  const { products, loadReviewsByProduct } = useProducts();
   const { formatPrice } = useCurrency();
   const { category } = useParams<{ category: ProductCategory }>();
   const navigate = useNavigate();
+  const loadedReviewIdsRef = React.useRef<Set<string>>(new Set());
 
   const [selectedCategories, setSelectedCategories] = useState<ProductCategory[]>(
     category ? [category] : []
@@ -76,6 +77,26 @@ export const ProductCatalog: React.FC = () => {
 
     return filtered;
   }, [products, selectedCategories, selectedBrands, selectedGoals, priceRange, sortBy]);
+
+  React.useEffect(() => {
+    const idsToLoad = products
+      .map((product) => product.id)
+      .filter((id) => !loadedReviewIdsRef.current.has(id));
+
+    if (idsToLoad.length === 0) {
+      return;
+    }
+
+    idsToLoad.forEach((id) => loadedReviewIdsRef.current.add(id));
+
+    Promise.all(
+      idsToLoad.map((id) =>
+        loadReviewsByProduct(id).catch((error) => {
+          console.error('Error loading reviews for catalog:', error);
+        }),
+      ),
+    ).catch(() => undefined);
+  }, [products, loadReviewsByProduct]);
 
   const toggleCategory = (cat: ProductCategory) => {
     setSelectedCategories((prev) =>
@@ -262,9 +283,12 @@ export const ProductCatalog: React.FC = () => {
               </Card>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredProducts.map((product) => (
-                  <Card key={product.id} className="hover:shadow-lg transition-shadow">
-                    <CardContent className="p-0">
+                {filteredProducts.map((product) => {
+                  const displayedRating = product.reviewCount > 0 ? product.rating : 0;
+
+                  return (
+                    <Card key={product.id} className="hover:shadow-lg transition-shadow">
+                      <CardContent className="p-0">
                       <div className="relative">
                         <img
                           src={product.images[0]}
@@ -296,7 +320,7 @@ export const ProductCatalog: React.FC = () => {
                         </h3>
                         <div className="flex items-center gap-1 mb-2">
                           <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm">{product.rating}</span>
+                          <span className="text-sm">{displayedRating}</span>
                           <span className="text-sm text-gray-500">({product.reviewCount})</span>
                         </div>
                         <div className="flex items-center gap-2 mb-3">
@@ -321,9 +345,10 @@ export const ProductCatalog: React.FC = () => {
                           {product.stock === 0 ? 'Agotado' : 'Ver Detalles'}
                         </Button>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </div>

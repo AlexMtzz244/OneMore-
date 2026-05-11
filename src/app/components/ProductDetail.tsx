@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useCurrency } from '../contexts/CurrencyContext';
 import { useProducts } from '../contexts/ProductContext';
 import { useCart } from '../contexts/CartContext';
@@ -8,6 +8,7 @@ import { Button } from './ui/button';
 import { Card, CardContent } from './ui/card';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Star, ShoppingCart, Package, AlertCircle, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
@@ -15,21 +16,35 @@ import { toast } from 'sonner';
 export const ProductDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { formatPrice } = useCurrency();
-  const { getProductById, products, getReviewsByProduct, addReview } = useProducts();
+  const { getProductById, products, getReviewsByProduct, addReview, loadReviewsByProduct, getOrdersByUser } = useProducts();
   const { addToCart } = useCart();
   const { user } = useAuth();
 
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
-  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewTitle, setReviewTitle] = useState('');
   const [reviewComment, setReviewComment] = useState('');
 
   const product = getProductById(id || '');
   const reviews = getReviewsByProduct(id || '');
+  const userOrders = user ? getOrdersByUser(user.id) : [];
+  const hasPurchased = !!user && !!product && userOrders.some((order) =>
+    order.items.some((item) => item.product.id === product.id),
+  );
   const relatedProducts = products
     .filter((p) => p.category === product?.category && p.id !== product?.id)
     .slice(0, 4);
+
+  React.useEffect(() => {
+    if (id) {
+      loadReviewsByProduct(id).catch((error) => {
+        console.error('Error loading reviews:', error);
+      });
+    }
+  }, [id, loadReviewsByProduct]);
 
   if (!product) {
     return (
@@ -53,10 +68,20 @@ export const ProductDetail: React.FC = () => {
     toast.success(`${product.name} agregado al carrito`);
   };
 
-  const handleSubmitReview = () => {
+  const handleSubmitReview = async () => {
     if (!user) {
       toast.error('Debes iniciar sesión para dejar una reseña');
       navigate('/login');
+      return;
+    }
+
+    if (!hasPurchased) {
+      toast.error('Solo puedes reseñar productos que hayas comprado');
+      return;
+    }
+
+    if (reviewRating === 0) {
+      toast.error('Selecciona una calificación');
       return;
     }
 
@@ -65,19 +90,27 @@ export const ProductDetail: React.FC = () => {
       return;
     }
 
-    addReview({
-      id: `review_${Date.now()}`,
-      productId: product.id,
-      userId: user.id,
-      userName: user.name,
-      rating: reviewRating,
-      comment: reviewComment,
-      createdAt: new Date().toISOString(),
-    });
+    try {
+      await addReview({
+        id: `review_${Date.now()}`,
+        productId: product.id,
+        userId: user.id,
+        userName: user.name,
+        rating: reviewRating,
+        title: reviewTitle.trim() || undefined,
+        comment: reviewComment,
+        verifiedPurchase: true,
+        createdAt: new Date().toISOString(),
+      });
 
-    setReviewComment('');
-    setReviewRating(5);
-    toast.success('Reseña agregada exitosamente');
+      setReviewTitle('');
+      setReviewComment('');
+      setReviewRating(0);
+      toast.success('Reseña agregada exitosamente');
+    } catch (error) {
+      console.error('Review error:', error);
+      toast.error('No se pudo guardar la reseña. Intenta de nuevo.');
+    }
   };
 
   const getDiscountedPrice = () => {
@@ -238,7 +271,7 @@ export const ProductDetail: React.FC = () => {
         {/* Tabs con información adicional */}
         <Card className="mb-12">
           <CardContent className="p-6">
-            <Tabs defaultValue="info">
+            <Tabs defaultValue={location.state?.tab === 'reviews' ? 'reviews' : 'info'}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="info">Información Nutricional</TabsTrigger>
                 <TabsTrigger value="reviews">Reseñas ({reviews.length})</TabsTrigger>
@@ -311,6 +344,20 @@ export const ProductDetail: React.FC = () => {
                     <h3 className="text-lg mb-4">Escribe una reseña</h3>
                     {user ? (
                       <div className="space-y-4">
+                        {!hasPurchased && (
+                          <div className="rounded-md border p-3 text-sm text-muted-foreground">
+                            Solo puedes dejar reseñas de productos comprados.
+                          </div>
+                        )}
+                        <div>
+                          <label className="block text-sm mb-2">Titulo</label>
+                          <Input
+                            value={reviewTitle}
+                            onChange={(e) => setReviewTitle(e.target.value)}
+                            placeholder="Resume tu experiencia"
+                            disabled={!hasPurchased}
+                          />
+                        </div>
                         <div>
                           <label className="block text-sm mb-2">Calificación</label>
                           <div className="flex gap-2">
@@ -319,6 +366,7 @@ export const ProductDetail: React.FC = () => {
                                 key={i}
                                 onClick={() => setReviewRating(i + 1)}
                                 className="focus:outline-none"
+                                disabled={!hasPurchased}
                               >
                                 <Star
                                   className={`h-6 w-6 ${
@@ -338,9 +386,10 @@ export const ProductDetail: React.FC = () => {
                             onChange={(e) => setReviewComment(e.target.value)}
                             placeholder="Comparte tu experiencia con este producto..."
                             rows={4}
+                            disabled={!hasPurchased}
                           />
                         </div>
-                        <Button onClick={handleSubmitReview}>
+                        <Button onClick={handleSubmitReview} disabled={!hasPurchased}>
                           Enviar Reseña
                         </Button>
                       </div>
@@ -381,10 +430,18 @@ export const ProductDetail: React.FC = () => {
                               ))}
                             </div>
                             <span className="font-medium">{review.userName}</span>
+                            {review.verifiedPurchase && (
+                              <Badge variant="secondary" className="text-xs">
+                                Compra verificada
+                              </Badge>
+                            )}
                             <span className="text-sm text-gray-500">
                               {new Date(review.createdAt).toLocaleDateString('es-ES')}
                             </span>
                           </div>
+                          {review.title && (
+                            <p className="font-medium mb-1">{review.title}</p>
+                          )}
                           <p className="text-gray-700">{review.comment}</p>
                         </div>
                       ))

@@ -1,4 +1,5 @@
 import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
 import { 
   getAuth, 
   setPersistence, 
@@ -22,10 +23,11 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Auth with persistence
 const auth: Auth = getAuth(app);
+const db = getFirestore(app);
 
 // Set persistence to LOCAL by default (user stays logged in across sessions)
 setPersistence(auth, browserLocalPersistence).catch((error) => {
   console.error('Error setting persistence:', error);
 });
 
-export { app, auth };
+export { app, auth, db };

@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { collection, addDoc, getDocs, orderBy, query, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { Product, Review, Order } from '../types';
 import { apiClient } from '../../lib/api-client';
+import { db } from '../../lib/firebase';
 import { useAuth } from './AuthContext';
 
 interface ProductContextType {
@@ -12,7 +14,8 @@ interface ProductContextType {
   addProduct: (product: Product) => Promise<void>;
   updateProduct: (product: Product) => Promise<void>;
   deleteProduct: (productId: string) => Promise<void>;
-  addReview: (review: Review) => void;
+  addReview: (review: Review) => Promise<void>;
+  loadReviewsByProduct: (productId: string) => Promise<void>;
   getReviewsByProduct: (productId: string) => Review[];
   getProductById: (productId: string) => Product | undefined;
   updateOrder: (order: Order) => Promise<void>;
@@ -76,6 +79,27 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   // Reviews se mantienen en memoria hasta tener endpoint.
 
+  const setReviewsForProduct = (productId: string, productReviews: Review[]) => {
+    setReviews((prev) => [
+      ...prev.filter((review) => review.productId !== productId),
+      ...productReviews,
+    ]);
+  };
+
+  const updateProductRatings = (productId: string, productReviews: Review[]) => {
+    const averageRating = productReviews.length
+      ? productReviews.reduce((sum, review) => sum + review.rating, 0) / productReviews.length
+      : 0;
+
+    setProducts((prev) =>
+      prev.map((product) =>
+        product.id === productId
+          ? { ...product, rating: averageRating, reviewCount: productReviews.length }
+          : product,
+      ),
+    );
+  };
+
   // ── Mutaciones de productos (sólo admin) ──────────────────────
 
   const addProduct = async (product: Product): Promise<void> => {
@@ -107,28 +131,46 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
     }
   };
 
-  // ── Reviews (locales hasta tener endpoint) ────────────────────
+  // ── Reviews (Firebase) ─────────────────────────────────────────
 
-  const addReview = (review: Review) => {
-    setReviews((prev) => [...prev, review]);
+  const loadReviewsByProduct = async (productId: string): Promise<void> => {
+    const reviewsRef = collection(db, 'products', productId, 'reviews');
+    const reviewsQuery = query(reviewsRef, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(reviewsQuery);
 
-    // Actualizar rating del producto en estado local
-    // NOTA: este cambio es temporal y se perderá al recargar (el backend no actualiza el rating aquí).
-    setReviews((prevReviews) => {
-      const productReviews = [...prevReviews, review].filter(
-        (r) => r.productId === review.productId,
-      );
-      const avgRating =
-        productReviews.reduce((sum, r) => sum + r.rating, 0) / productReviews.length;
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === review.productId
-            ? { ...p, rating: avgRating, reviewCount: productReviews.length }
-            : p,
-        ),
-      );
-      return prevReviews;
+    const productReviews = snapshot.docs.map((doc) => {
+      const data = doc.data() as Omit<Review, 'id' | 'createdAt'> & {
+        createdAt?: Timestamp | string;
+      };
+
+      const createdAt = data.createdAt instanceof Timestamp
+        ? data.createdAt.toDate().toISOString()
+        : typeof data.createdAt === 'string'
+          ? data.createdAt
+          : new Date().toISOString();
+
+      return {
+        ...data,
+        id: doc.id,
+        productId,
+        createdAt,
+      } as Review;
     });
+
+    setReviewsForProduct(productId, productReviews);
+    updateProductRatings(productId, productReviews);
+  };
+
+  const addReview = async (review: Review): Promise<void> => {
+    const { id: _id, createdAt: _createdAt, ...data } = review;
+    const reviewsRef = collection(db, 'products', review.productId, 'reviews');
+
+    await addDoc(reviewsRef, {
+      ...data,
+      createdAt: serverTimestamp(),
+    });
+
+    await loadReviewsByProduct(review.productId);
   };
 
   const getReviewsByProduct = (productId: string): Review[] => {
@@ -191,6 +233,7 @@ export const ProductProvider: React.FC<{ children: ReactNode }> = ({ children })
         updateProduct,
         deleteProduct,
         addReview,
+        loadReviewsByProduct,
         getReviewsByProduct,
         getProductById,
         updateOrder,

@@ -134,10 +134,19 @@ export const OrderHistory: React.FC = () => {
                             Cantidad: {item.quantity}
                           </p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right space-y-2">
                           <p className="text-lg text-blue-600">
                             {formatPrice(item.product.price * item.quantity)}
                           </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              navigate(`/producto/${item.product.id}`, { state: { tab: 'reviews' } })
+                            }
+                          >
+                            Dejar una reseña
+                          </Button>
                         </div>
                       </div>
                     ))}
