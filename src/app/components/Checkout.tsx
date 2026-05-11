@@ -35,6 +35,10 @@ export const Checkout: React.FC = () => {
 
   const [paypalLoading, setPaypalLoading] = useState(false);
   const [cardLoading, setCardLoading] = useState(false);
+  const [cardName, setCardName] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvc, setCardCvc] = useState('');
 
   const preferredPayment = (location.state as { payment?: string } | null)?.payment;
 
@@ -92,6 +96,11 @@ export const Checkout: React.FC = () => {
   const createTestCardOrder = async () => {
     if (!isAddressComplete) {
       toast.error('Por favor completa tu dirección de envío');
+      return;
+    }
+
+    if (!cardName || !cardNumber || !cardExpiry || !cardCvc) {
+      toast.error('Completa los datos de la tarjeta');
       return;
     }
 
@@ -366,6 +375,53 @@ export const Checkout: React.FC = () => {
                         Completa tu dirección de envío para habilitar el pago con tarjeta.
                       </div>
                     )}
+                    <div className="space-y-3 rounded-md border p-4">
+                      <p className="text-sm text-muted-foreground">
+                        Datos de pago (simulados)
+                      </p>
+                      <div>
+                        <Label htmlFor="card-name">Nombre en la tarjeta</Label>
+                        <Input
+                          id="card-name"
+                          value={cardName}
+                          onChange={(e) => setCardName(e.target.value)}
+                          placeholder="Nombre Apellido"
+                          disabled={cardLoading || paypalLoading}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="card-number">Numero de tarjeta</Label>
+                        <Input
+                          id="card-number"
+                          value={cardNumber}
+                          onChange={(e) => setCardNumber(e.target.value)}
+                          placeholder="4111 1111 1111 1111"
+                          disabled={cardLoading || paypalLoading}
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor="card-expiry">Expiracion</Label>
+                          <Input
+                            id="card-expiry"
+                            value={cardExpiry}
+                            onChange={(e) => setCardExpiry(e.target.value)}
+                            placeholder="MM/AA"
+                            disabled={cardLoading || paypalLoading}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="card-cvc">CVC</Label>
+                          <Input
+                            id="card-cvc"
+                            value={cardCvc}
+                            onChange={(e) => setCardCvc(e.target.value)}
+                            placeholder="123"
+                            disabled={cardLoading || paypalLoading}
+                          />
+                        </div>
+                      </div>
+                    </div>
                     <Button
                       type="button"
                       variant={preferredPayment === 'card-test' ? 'default' : 'outline'}
