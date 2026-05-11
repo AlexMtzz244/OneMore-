@@ -112,7 +112,7 @@ export const OrderHistory: React.FC = () => {
                     {order.items.map((item) => (
                       <div
                         key={item.product.id}
-                        className="flex gap-4 p-3 bg-gray-50 rounded-lg"
+                        className="flex gap-4 p-3 bg-muted/40 rounded-lg"
                       >
                         <img
                           src={item.product.images[0]}
