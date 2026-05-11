@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { useCurrency } from '../contexts/CurrencyContext';
@@ -15,6 +15,7 @@ import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js';
 
 export const Checkout: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { cart, getCartTotal, clearCart } = useCart();
   const { formatPrice, currency, convertPrice } = useCurrency();
@@ -33,6 +34,9 @@ export const Checkout: React.FC = () => {
   );
 
   const [paypalLoading, setPaypalLoading] = useState(false);
+  const [cardLoading, setCardLoading] = useState(false);
+
+  const preferredPayment = (location.state as { payment?: string } | null)?.payment;
 
   // Validar que el usuario esté logueado
   React.useEffect(() => {
@@ -84,6 +88,41 @@ export const Checkout: React.FC = () => {
       unitAmount: convertPrice(priceMXN),
     };
   });
+
+  const createTestCardOrder = async () => {
+    if (!isAddressComplete) {
+      toast.error('Por favor completa tu dirección de envío');
+      return;
+    }
+
+    try {
+      setCardLoading(true);
+
+      const orderDraft = {
+        id: `order_${Date.now()}`,
+        userId: user.id,
+        items: cart,
+        total: getCartTotal(),
+        status: 'pendiente' as const,
+        shippingAddress: normalizedAddress,
+        paymentMethod: 'Tarjeta (pruebas)',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      await createStoreOrder(orderDraft);
+      clearCart();
+      localStorage.setItem('lastOrder', JSON.stringify(orderDraft));
+
+      toast.success('Pedido de prueba creado');
+      navigate('/confirmacion', { state: { order: orderDraft } });
+    } catch (error) {
+      console.error('Test card order error:', error);
+      toast.error('No pudimos crear el pedido de prueba. Intenta de nuevo.');
+    } finally {
+      setCardLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground py-8">
@@ -320,6 +359,23 @@ export const Checkout: React.FC = () => {
                       </div>
                     </PayPalScriptProvider>
                   )}
+
+                  <div className="space-y-3">
+                    {!isAddressComplete && (
+                      <div className="rounded-md border p-3 text-sm text-muted-foreground">
+                        Completa tu dirección de envío para habilitar el pago con tarjeta.
+                      </div>
+                    )}
+                    <Button
+                      type="button"
+                      variant={preferredPayment === 'card-test' ? 'default' : 'outline'}
+                      className="w-full"
+                      onClick={createTestCardOrder}
+                      disabled={!isAddressComplete || cardLoading || paypalLoading}
+                    >
+                      {cardLoading ? 'Procesando...' : 'Pagar con tarjeta (pruebas)'}
+                    </Button>
+                  </div>
 
                   <Button
                     type="button"

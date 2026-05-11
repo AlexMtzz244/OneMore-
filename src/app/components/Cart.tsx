@@ -182,9 +182,17 @@ export const Cart: React.FC = () => {
                 <Button
                   className="w-full"
                   size="lg"
-                  onClick={() => navigate('/checkout')}
+                  onClick={() => navigate('/checkout', { state: { payment: 'paypal' } })}
                 >
-                  Pagar (PayPal / Tarjeta)
+                  Pagar con PayPal
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="w-full mt-3"
+                  onClick={() => navigate('/checkout', { state: { payment: 'card-test' } })}
+                >
+                  Pagar con tarjeta (pruebas)
                 </Button>
 
                 <Button

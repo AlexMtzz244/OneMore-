@@ -9,6 +9,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { toast } from 'sonner';
+import { Eye, EyeOff } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ export const Login: React.FC = () => {
   // Estado para Login
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
@@ -28,6 +30,8 @@ export const Login: React.FC = () => {
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
 
   const from = (location.state as any)?.from?.pathname || '/';
@@ -192,14 +196,32 @@ export const Login: React.FC = () => {
                     </div>
                     <div>
                       <Label htmlFor="login-password">Contraseña</Label>
-                      <Input
-                        id="login-password"
-                        type="password"
-                        placeholder="******"
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        disabled={isLoading}
-                      />
+                      <div className="relative">
+                        <Input
+                          id="login-password"
+                          type={showLoginPassword ? 'text' : 'password'}
+                          placeholder="******"
+                          value={loginPassword}
+                          onChange={(e) => setLoginPassword(e.target.value)}
+                          disabled={isLoading}
+                          className="pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-1 top-1/2 -translate-y-1/2"
+                          onClick={() => setShowLoginPassword((prev) => !prev)}
+                          disabled={isLoading}
+                          aria-label={showLoginPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                        >
+                          {showLoginPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                     <Button 
                       type="submit" 
@@ -269,25 +291,61 @@ export const Login: React.FC = () => {
                     </div>
                     <div>
                       <Label htmlFor="register-password">Contraseña</Label>
-                      <Input
-                        id="register-password"
-                        type="password"
-                        placeholder="Mínimo 6 caracteres"
-                        value={registerPassword}
-                        onChange={(e) => setRegisterPassword(e.target.value)}
-                        disabled={isLoading}
-                      />
+                      <div className="relative">
+                        <Input
+                          id="register-password"
+                          type={showRegisterPassword ? 'text' : 'password'}
+                          placeholder="Mínimo 6 caracteres"
+                          value={registerPassword}
+                          onChange={(e) => setRegisterPassword(e.target.value)}
+                          disabled={isLoading}
+                          className="pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-1 top-1/2 -translate-y-1/2"
+                          onClick={() => setShowRegisterPassword((prev) => !prev)}
+                          disabled={isLoading}
+                          aria-label={showRegisterPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                        >
+                          {showRegisterPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                     <div>
                       <Label htmlFor="register-confirm-password">Confirmar Contraseña</Label>
-                      <Input
-                        id="register-confirm-password"
-                        type="password"
-                        placeholder="Repite tu contraseña"
-                        value={registerConfirmPassword}
-                        onChange={(e) => setRegisterConfirmPassword(e.target.value)}
-                        disabled={isLoading}
-                      />
+                      <div className="relative">
+                        <Input
+                          id="register-confirm-password"
+                          type={showRegisterConfirmPassword ? 'text' : 'password'}
+                          placeholder="Repite tu contraseña"
+                          value={registerConfirmPassword}
+                          onChange={(e) => setRegisterConfirmPassword(e.target.value)}
+                          disabled={isLoading}
+                          className="pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-1 top-1/2 -translate-y-1/2"
+                          onClick={() => setShowRegisterConfirmPassword((prev) => !prev)}
+                          disabled={isLoading}
+                          aria-label={showRegisterConfirmPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+                        >
+                          {showRegisterConfirmPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
                     <Button 
                       type="submit" 
