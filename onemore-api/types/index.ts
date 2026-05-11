@@ -14,6 +14,7 @@ export interface User {
   role: UserRole
   addresses: Address[]
   createdAt: string
+  updatedAt: string
   photoURL?: string
 }
 
@@ -48,6 +49,7 @@ export interface Product {
   rating: number
   reviewCount: number
   createdAt: string
+  updatedAt: string
 }
 
 export interface NutritionalInfo {
