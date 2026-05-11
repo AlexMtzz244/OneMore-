@@ -296,7 +296,7 @@ export const ProductCatalog: React.FC = () => {
                           className="w-full h-48 object-cover rounded-t-lg cursor-pointer"
                           onClick={() => navigate(`/producto/${product.id}`)}
                         />
-                        {product.discount && (
+                        {typeof product.discount === 'number' && product.discount > 0 && (
                           <Badge className="absolute top-2 right-2 bg-red-500">
                             -{product.discount}%
                           </Badge>
