@@ -1,8 +1,8 @@
-// File: C:\Users\Alyed\Documentos\GitHub\OneMore-\onemore-api\app\api\orders\route.ts
-import * as entry from '../../../../../app/api/orders/route.js'
+// File: C:\Users\Alyed\Documentos\GitHub\OneMore-\onemore-api\app\api\admin\users\[uid]\route.ts
+import * as entry from '../../../../../../../app/api/admin/users/[uid]/route.js'
 import type { NextRequest } from 'next/server.js'
 
-type TEntry = typeof import('../../../../../app/api/orders/route.js')
+type TEntry = typeof import('../../../../../../../app/api/admin/users/[uid]/route.js')
 
 type SegmentParams<T extends Object = any> = T extends Record<string, any>
   ? { [K in keyof T]: T[K] extends string ? string | string[] | undefined : never }
