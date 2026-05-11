@@ -179,12 +179,6 @@ export const OrderHistory: React.FC = () => {
 
                   {/* Acciones */}
                   <div className="flex flex-wrap gap-3">
-                    <Button
-                      variant="outline"
-                      onClick={() => navigate(`/pedido/${order.id}`)}
-                    >
-                      Ver Detalles
-                    </Button>
                     {order.status === 'entregado' && (
                       <Button
                         variant="outline"
