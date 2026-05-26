@@ -73,15 +73,17 @@ export async function getProductById(id: string): Promise<Product | null> {
 
 /** Crea un producto nuevo. El ID lo genera Firestore automáticamente. */
 export async function createProduct(
-  data: Omit<Product, 'id' | 'createdAt'>,
+  data: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>,
 ): Promise<Product> {
   const db = getAdminFirestore()
   const ref = db.collection(COLLECTION).doc()
 
-  const productData = { ...data, createdAt: Timestamp.now() }
+  const now = Timestamp.now()
+  const productData = { ...data, createdAt: now, updatedAt: now }
   await ref.set(productData)
 
-  return { id: ref.id, ...data, createdAt: new Date().toISOString() }
+  const nowIso = new Date().toISOString()
+  return { id: ref.id, ...data, createdAt: nowIso, updatedAt: nowIso }
 }
 
 /** Actualiza los campos proporcionados de un producto. Devuelve null si no existe. */
