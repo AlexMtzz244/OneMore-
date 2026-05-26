@@ -36,7 +36,7 @@ export function cookieOptions(maxAgeSeconds?: number) {
     // En producción (cross-domain) se necesita SameSite=none + Secure.
     // En dev el proxy de Vite mantiene el mismo origen, por lo que lax es suficiente.
     secure: isProduction,
-    sameSite: isProduction ? 'none' : 'lax' as const,
+    sameSite: (isProduction ? 'none' : 'lax') as 'none' | 'lax',
     path: '/',
     maxAge: maxAgeSeconds ?? SESSION_EXPIRES_MS / 1000,
   }
