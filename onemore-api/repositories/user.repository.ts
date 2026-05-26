@@ -13,6 +13,7 @@ interface UserDoc {
   addresses: Address[]
   photoURL?: string
   createdAt: Timestamp | string
+  updatedAt?: Timestamp | string
 }
 
 function docToUser(data: UserDoc): User {
@@ -27,6 +28,10 @@ function docToUser(data: UserDoc): User {
       data.createdAt instanceof Timestamp
         ? data.createdAt.toDate().toISOString()
         : (data.createdAt as string),
+    updatedAt:
+      data.updatedAt instanceof Timestamp
+        ? data.updatedAt.toDate().toISOString()
+        : (data.updatedAt as string | undefined) ?? new Date().toISOString(),
   }
 }
 
@@ -73,6 +78,7 @@ export async function upsertUser(data: {
     addresses: [],
     ...(data.photoURL !== undefined ? { photoURL: data.photoURL } : {}),
     createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
   }
 
   await ref.set(newDoc)
