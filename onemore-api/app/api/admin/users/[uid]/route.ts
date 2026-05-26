@@ -11,7 +11,7 @@ export const runtime = 'nodejs'
 // ─────────────────────────────────────────────────────────────
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { uid: string } },
+  { params }: { params: Promise<{ uid: string }> },
 ) {
   const { error } = await requireAdmin(request)
   if (error) return error
@@ -24,7 +24,8 @@ export async function PUT(
     return fail('Rol inválido', 400)
   }
 
-  const updated = await updateUser(params.uid, { role }).catch(() => null)
+  const { uid } = await params
+  const updated = await updateUser(uid, { role }).catch(() => null)
   if (!updated) return fail('Usuario no encontrado', 404)
 
   return ok(updated)
