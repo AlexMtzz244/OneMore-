@@ -22,9 +22,7 @@ const nextConfig: NextConfig = {
   ],
 
   async headers() {
-    // CORS only needed in development when NOT using the Vite dev proxy
-    if (process.env.NODE_ENV !== 'development') return []
-
+    // CORS necesario siempre: en dev usa proxy de Vite, en producción dominios distintos (Vercel/Render).
     const origin = process.env.CORS_ORIGIN ?? 'http://localhost:5173'
 
     return [

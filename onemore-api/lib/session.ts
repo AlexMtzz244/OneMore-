@@ -30,11 +30,13 @@ export async function verifySessionCookie(cookie: string): Promise<DecodedIdToke
 
 /** Opciones base para la cookie de sesión */
 export function cookieOptions(maxAgeSeconds?: number) {
+  const isProduction = process.env.NODE_ENV === 'production'
   return {
     httpOnly: true,
-    // secure solo en producción (HTTPS). En dev el proxy de Vite evita el problema de cross-origin.
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax' as const,
+    // En producción (cross-domain) se necesita SameSite=none + Secure.
+    // En dev el proxy de Vite mantiene el mismo origen, por lo que lax es suficiente.
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax' as const,
     path: '/',
     maxAge: maxAgeSeconds ?? SESSION_EXPIRES_MS / 1000,
   }
