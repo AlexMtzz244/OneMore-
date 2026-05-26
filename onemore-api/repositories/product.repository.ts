@@ -97,7 +97,7 @@ export async function updateProduct(
 
   if (!snap.exists) return null
 
-  await ref.update({ ...data, updatedAt: Timestamp.now() } as FirebaseFirestore.UpdateData)
+  await ref.update({ ...data, updatedAt: Timestamp.now() })
   const updated = await ref.get()
   return docToProduct(updated.id, updated.data()!)
 }
